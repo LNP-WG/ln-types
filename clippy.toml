@@ -1,0 +1,2 @@
+# Yes, real MSRV is 1.48 but it may be lowered to 1.36 and I don't want to deal with the warnings yet
+msrv = "1.36.0"
