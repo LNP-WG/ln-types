@@ -2,9 +2,11 @@
 //!
 //! This module provides the [`P2PAddress`] type and the related error types.
 
+use std::borrow::Borrow;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use std::fmt;
+use std::io;
 use crate::NodeId;
 
 const LN_DEFAULT_PORT: u16 = 9735;
@@ -86,7 +88,7 @@ impl fmt::Display for Host {
 ///
 /// This is needed because IPv6 addresses need square brackets when displayed as `ip:port` but
 /// square brackets are not used when they are displayed standalone.
-pub struct HostPort<H: std::borrow::Borrow<Host>>(
+pub struct HostPort<H: Borrow<Host>>(
     /// Host
     ///
     /// You can use `Host`, `&Host` or other smart pointers here.
@@ -97,7 +99,7 @@ pub struct HostPort<H: std::borrow::Borrow<Host>>(
 );
 
 /// Makes sure to use square brackets around IPv6
-impl<H: std::borrow::Borrow<Host>> fmt::Display for HostPort<H> {
+impl<H: Borrow<Host>> fmt::Display for HostPort<H> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self.0.borrow().0 {
             HostInner::Ip(std::net::IpAddr::V6(addr)) => write!(f, "[{}]:{}", addr, self.1),
@@ -328,6 +330,63 @@ impl std::error::Error for ParseErrorInner {
         }
     }
 }
+
+/// Iterator over socket addresses returned by `to_socket_addrs()`
+///
+/// This is the iterator used in the implementation of [`std::net::ToSocketAddrs`] for [`HostPort`]
+/// and [`P2PAddress`].
+pub struct SocketAddrs {
+    iter: std::iter::Chain<std::option::IntoIter<std::net::SocketAddr>, std::vec::IntoIter<std::net::SocketAddr>>
+}
+
+impl Iterator for SocketAddrs {
+    type Item = std::net::SocketAddr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
+    }
+}
+
+/// Note that onion addresses can never be resolved, you have to use a proxy instead.
+impl<H: Borrow<Host>> std::net::ToSocketAddrs for HostPort<H> {
+    type Iter = SocketAddrs;
+
+    fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
+        if self.0.borrow().is_onion() {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, ResolveOnion));
+        }
+
+        let iter = match &self.0.borrow().0 {
+            HostInner::Ip(ip_addr) => Some(std::net::SocketAddr::new(*ip_addr, self.1)).into_iter().chain(Vec::new()),
+            HostInner::Hostname(hostname) => None.into_iter().chain((hostname.as_str(), self.1).to_socket_addrs()?),
+        };
+
+        Ok(SocketAddrs {
+            iter,
+        })
+    }
+}
+
+/// Note that onion addresses can never be resolved, you have to use a proxy instead.
+impl std::net::ToSocketAddrs for P2PAddress {
+    type Iter = SocketAddrs;
+
+    fn to_socket_addrs(&self) -> io::Result<Self::Iter> {
+        HostPort(&self.host, self.port).to_socket_addrs()
+    }
+}
+
+/// Error type returned when attempting to resolve onion address.
+#[derive(Debug)]
+struct ResolveOnion;
+
+impl fmt::Display for ResolveOnion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("attempt to resolve onion address")
+    }
+}
+
+impl std::error::Error for ResolveOnion {}
 
 #[cfg(feature = "parse_arg")]
 mod parse_arg_impl {
