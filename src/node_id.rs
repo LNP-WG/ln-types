@@ -23,6 +23,21 @@ impl NodeId {
         NodeId(bytes)
     }
 
+    /// Puts the byte representation into `Vec<u8>`.
+    ///
+    /// This is meant for convenience around APIs that require `Vec<u8>`. Since it allocates it's
+    /// best to avoid it if possible.
+    pub fn to_vec(self) -> Vec<u8> {
+        self.0.to_vec()
+    }
+
+    /// Convenience conversion to byte array.
+    ///
+    /// This can be used instead of `From` to avoid inference issues.
+    pub fn to_array(self) -> [u8; 33] {
+        self.0
+    }
+
     /// Internal monomorphic parsing method.
     ///
     /// This should improve codegen without requiring allocations.

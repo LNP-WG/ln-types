@@ -171,6 +171,14 @@ enum IpOrHostnamePos {
 }
 
 impl P2PAddress {
+    /// Conveniently constructs [`HostPort`].
+    ///
+    /// This can be used when `NodeId` is not needed - e.g. when creating string representation of
+    /// connection information.
+    pub fn as_host_port(&self) -> HostPort<&Host> {
+        HostPort(&self.host, self.port)
+    }
+
     /// Internal monomorphic parsing method.
     ///
     /// This should improve codegen without requiring allocations.
