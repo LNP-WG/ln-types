@@ -337,7 +337,7 @@ mod serde_impl {
         }
     }
 
-    /// `NodeId` is serialized as hex in human-readable formats and as bytes in non-human-readable.
+    /// `NodeId` is serialized as hex to human-readable formats and as bytes to non-human-readable.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for NodeId {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
@@ -349,7 +349,7 @@ mod serde_impl {
         }
     }
 
-    /// `NodeId` is deserialized as hex in human-readable formats and as bytes in non-human-readable.
+    /// `NodeId` is deserialized as hex from human-readable formats and as bytes from non-human-readable.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for NodeId {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {

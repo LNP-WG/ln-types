@@ -135,12 +135,14 @@ impl Amount {
     }
 }
 
+/// Displays the amount followed by denomination ` msat`.
 impl fmt::Display for Amount {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} msat", self.0)
     }
 }
 
+/// Displays the amount followed by denomination ` msat`.
 impl fmt::Debug for Amount {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
@@ -148,6 +150,7 @@ impl fmt::Debug for Amount {
 }
 
 
+/// Panics on overflow
 impl std::ops::Add for Amount {
     type Output = Self;
 
@@ -165,6 +168,7 @@ impl std::ops::Add for Amount {
     }
 }
 
+/// Panics on overflow
 impl std::ops::AddAssign for Amount {
     #[inline]
     fn add_assign(&mut self, rhs: Amount) {
@@ -172,6 +176,7 @@ impl std::ops::AddAssign for Amount {
     }
 }
 
+/// Panics on overflow
 impl std::ops::Sub for Amount {
     type Output = Self;
 
@@ -181,6 +186,7 @@ impl std::ops::Sub for Amount {
     }
 }
 
+/// Panics on overflow
 impl std::ops::SubAssign for Amount {
     #[inline]
     fn sub_assign(&mut self, rhs: Amount) {
@@ -188,6 +194,7 @@ impl std::ops::SubAssign for Amount {
     }
 }
 
+/// Panics on overflow
 impl std::ops::Mul<u64> for Amount {
     type Output = Self;
 
@@ -199,6 +206,7 @@ impl std::ops::Mul<u64> for Amount {
     }
 }
 
+/// Panics on overflow
 impl std::ops::Mul<Amount> for u64 {
     type Output = Amount;
 
@@ -207,6 +215,7 @@ impl std::ops::Mul<Amount> for u64 {
     }
 }
 
+/// Panics on overflow
 impl std::ops::MulAssign<u64> for Amount {
     fn mul_assign(&mut self, rhs: u64) {
         *self = *self * rhs;
@@ -241,6 +250,8 @@ impl std::ops::RemAssign<u64> for Amount {
     }
 }
 
+/// Accepts an unsigned integer up to 21 000 000 BTC
+/// The amount may optionally be followed by denomination ` msat`.
 impl FromStr for Amount {
     type Err = ParseError;
 
@@ -250,6 +261,8 @@ impl FromStr for Amount {
     }
 }
 
+/// Accepts an unsigned integer up to 21 000 000 BTC
+/// The amount may optionally be followed by denomination ` msat`.
 impl<'a> TryFrom<&'a str> for Amount {
     type Error = ParseError;
 
@@ -259,6 +272,8 @@ impl<'a> TryFrom<&'a str> for Amount {
     }
 }
 
+/// Accepts an unsigned integer up to 21 000 000 BTC
+/// The amount may optionally be followed by denomination ` msat`.
 impl TryFrom<String> for Amount {
     type Error = ParseError;
 
@@ -268,6 +283,8 @@ impl TryFrom<String> for Amount {
     }
 }
 
+/// Accepts an unsigned integer up to 21 000 000 BTC
+/// The amount may optionally be followed by denomination ` msat`.
 impl TryFrom<Box<str>> for Amount {
     type Error = ParseError;
 
@@ -423,6 +440,7 @@ mod serde_impl {
         }
     }
 
+    /// The value is serialized as `u64` msats.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for Amount {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
@@ -430,6 +448,7 @@ mod serde_impl {
         }
     }
 
+    /// The value is deserialized as `u64` msats.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for Amount {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
@@ -446,6 +465,7 @@ mod postgres_impl {
     use std::error::Error;
     use std::convert::TryInto;
 
+    /// Stored as `i64` msats
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for Amount {
         fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
@@ -460,6 +480,7 @@ mod postgres_impl {
         postgres_types::to_sql_checked!();
     }
 
+    /// Retrieved as `i64` msats with range check
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl<'a> FromSql<'a> for Amount {
         fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {

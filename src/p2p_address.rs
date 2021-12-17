@@ -437,6 +437,12 @@ mod serde_impl {
         }
     }
 
+    /// Serialized as string to human-readable formats.
+    ///
+    /// # Panics
+    ///
+    /// This panics if the format is **not** human-readable because it's not decided how it should
+    /// be done.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for P2PAddress {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
@@ -448,6 +454,12 @@ mod serde_impl {
         }
     }
 
+    /// Deserialized as string from human-readable formats.
+    ///
+    /// # Panics
+    ///
+    /// This panics if the format is **not** human-readable because it's not decided how it should
+    /// be done.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for P2PAddress {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
@@ -467,6 +479,7 @@ mod postgres_impl {
     use bytes::BytesMut;
     use std::error::Error;
 
+    /// Stores the value as text (same types as `&str`)
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for P2PAddress {
         fn to_sql(&self, _ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
@@ -482,6 +495,7 @@ mod postgres_impl {
         postgres_types::to_sql_checked!();
     }
 
+    /// Retrieves the value as text (same types as `&str`)
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl<'a> FromSql<'a> for P2PAddress {
         fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {

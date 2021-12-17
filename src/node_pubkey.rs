@@ -18,7 +18,7 @@ use crate::NodeId;
 /// This can be considered similar to `NodeId` with these differences:
 ///
 /// * `NodeId` is more performant for non-cryptographic operations.
-/// * `NodeId` can not performa any cryptographic operations itself.
+/// * `NodeId` can not perform any cryptographic operations itself.
 /// * `NodePubkey`, despite its field being public, maintains more invariants.
 ///    *In this library*, a valid `NodeId` is **not** guaranteed to be a valid `NodePubkey`
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
