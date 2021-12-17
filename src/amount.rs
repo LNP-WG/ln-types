@@ -496,7 +496,8 @@ mod slog_impl {
 mod tests {
     use super::Amount;
 
+    #[test]
     fn amount_max() {
-        let _ = Amount::from_msat(super::MAX_MONEY_MSAT);
+        assert_eq!(Amount::from_msat(super::MAX_MONEY_MSAT).unwrap(), Amount::MAX);
     }
 }
