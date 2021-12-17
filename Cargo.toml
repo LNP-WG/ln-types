@@ -11,7 +11,7 @@ categories = ["cryptography::cryptocurrencies", "encoding", "rust-patterns", "va
 license = "MITNFA"
 
 [package.metadata.docs.rs]
-features = ["serde", "secp256k1/bitcoin_hashes", "bitcoin/use-serde", "postgres-types", "parse_arg"]
+features = ["serde", "secp256k1/bitcoin_hashes", "bitcoin/use-serde", "postgres-types", "parse_arg", "slog"]
 rustc-args = ["--cfg", "docsrs"]
 
 [features]
