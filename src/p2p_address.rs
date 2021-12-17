@@ -332,7 +332,7 @@ impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             ParseErrorInner::MissingAtSymbol => None,
-            ParseErrorInner::InvalidNodeId(error) => Some(error),
+            ParseErrorInner::InvalidNodeId(error) => error.source(),
             ParseErrorInner::InvalidPortNumber(error) => Some(error),
             ParseErrorInner::InvalidIpv6(error) => Some(error),
         }
