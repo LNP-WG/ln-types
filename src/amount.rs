@@ -433,7 +433,7 @@ mod serde_impl {
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for Amount {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-            deserializer.deserialize_str(HRVisitor)
+            deserializer.deserialize_u64(HRVisitor)
         }
     }
 }
