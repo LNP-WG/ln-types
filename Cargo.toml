@@ -1,6 +1,6 @@
 [package]
 name = "ln-types"
-version = "0.1.3"
+version = "0.1.4"
 authors = ["Martin Habovstiak <martin.habovstiak@gmail.com>"]
 edition = "2018"
 description = "Common types related to Lightning Network"
@@ -12,7 +12,7 @@ license = "MITNFA"
 
 [package.metadata.docs.rs]
 features = ["serde", "secp256k1/bitcoin_hashes", "bitcoin/use-serde", "postgres-types", "parse_arg", "slog"]
-rustc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 postgres-types = ["postgres-types-real", "bytes"]
