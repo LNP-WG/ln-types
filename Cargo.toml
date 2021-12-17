@@ -1,6 +1,6 @@
 [package]
 name = "ln-types"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Martin Habovstiak <martin.habovstiak@gmail.com>"]
 edition = "2018"
 description = "Common types related to Lightning Network"
