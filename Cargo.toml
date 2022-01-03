@@ -11,11 +11,13 @@ categories = ["cryptography::cryptocurrencies", "encoding", "rust-patterns", "va
 license = "MITNFA"
 
 [package.metadata.docs.rs]
-features = ["serde", "secp256k1/bitcoin_hashes", "bitcoin/use-serde", "postgres-types", "parse_arg", "slog"]
+features = ["serde", "node_pubkey_verify", "node_pubkey_recovery", "bitcoin/use-serde", "postgres-types", "parse_arg", "slog"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 postgres-types = ["postgres-types-real", "bytes"]
+node_pubkey_verify = ["secp256k1/bitcoin_hashes"]
+node_pubkey_recovery = ["node_pubkey_verify", "secp256k1/recovery"]
 
 [dependencies]
 serde = { version = "1.0.130", optional = true }

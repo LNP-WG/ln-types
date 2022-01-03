@@ -33,6 +33,14 @@
 //! * [`secp256k1`] - provides `NodePubkey`
 //! * [`slog`] - provides `slog::Value` and (where relevant) `slog::KV` implementations for the types
 //!
+//! Additional features:
+//!
+//! * `node_pubkey_verify` - convenience function for verifying messages signed with
+//!                          [`NodePubkey`], implies `secp256k1/bitcoin_hashes`
+//! * `node_pubkey_recovery` - convenience function for verifying lightning messages
+//!                            signed with [`NodePubkey`], implies `node_pubkey_verify` and
+//!                            `secp256k1/recovery`
+//!
 //! Feel free to contribute your own!
 //!
 //! **Disclaimer**: Inclusion of any crate here is neither endorsment nor guarantee of it
