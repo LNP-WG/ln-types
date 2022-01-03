@@ -143,7 +143,7 @@ impl NodePubkey {
     ///
     /// This is more readable and less prone to inference problems than `Into::into`.
     pub fn to_node_id(&self) -> NodeId {
-        NodeId::from_raw_bytes(self.0.serialize())
+        NodeId::from_raw_bytes(self.0.serialize()).expect("secp256k1 always creates correct node ID")
     }
 
     /// Computes public key from a secret key and stores it as `NodePubkey`.

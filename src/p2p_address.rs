@@ -570,12 +570,12 @@ mod tests {
 
     #[test]
     fn invalid_port() {
-        assert!("012345678901234567890123456789012345678901234567890123456789abcdef@example.com:foo".parse::<P2PAddress>().is_err());
+        assert!("022345678901234567890123456789012345678901234567890123456789abcdef@example.com:foo".parse::<P2PAddress>().is_err());
     }
 
     #[test]
     fn correct_no_port() {
-        let input = "012345678901234567890123456789012345678901234567890123456789abcdef@example.com";
+        let input = "022345678901234567890123456789012345678901234567890123456789abcdef@example.com";
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
         let expected = format!("{}{}", input, ":9735");
@@ -584,7 +584,7 @@ mod tests {
 
     #[test]
     fn correct_with_port() {
-        let input = "012345678901234567890123456789012345678901234567890123456789abcdef@example.com:1234";
+        let input = "022345678901234567890123456789012345678901234567890123456789abcdef@example.com:1234";
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
         assert_eq!(output, input);
@@ -592,7 +592,7 @@ mod tests {
 
     #[test]
     fn ipv6_no_port() {
-        let input = "012345678901234567890123456789012345678901234567890123456789abcdef@[::1]";
+        let input = "022345678901234567890123456789012345678901234567890123456789abcdef@[::1]";
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
         let expected = format!("{}{}", input, ":9735");
@@ -601,7 +601,7 @@ mod tests {
 
     #[test]
     fn ipv6_with_port() {
-        let input = "012345678901234567890123456789012345678901234567890123456789abcdef@[::1]:1234";
+        let input = "022345678901234567890123456789012345678901234567890123456789abcdef@[::1]:1234";
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
         assert_eq!(output, input);

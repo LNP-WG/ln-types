@@ -14,6 +14,9 @@ use std::fmt;
 /// It is therefore recommended to perform checking at system boundaries where performance is not
 /// very important - e.g. user inputs.
 ///
+/// Despite this not being a guaranteed point on the curve it still performs cheap basic sanity
+/// check: whether the key begins with 0x02 or 0x03.
+///
 /// ## Example
 ///
 /// ```
@@ -27,8 +30,12 @@ pub struct NodeId([u8; 33]);
 impl NodeId {
     /// Creates `NodeId` from raw byte representation.
     #[inline]
-    pub fn from_raw_bytes(bytes: [u8; 33]) -> Self {
-        NodeId(bytes)
+    pub fn from_raw_bytes(bytes: [u8; 33]) -> Result<Self, InvalidNodeId> {
+        if bytes[0] == 0x02 || bytes[0] == 0x03 {
+            Ok(NodeId(bytes))
+        } else {
+            Err(InvalidNodeId { bad_byte: bytes[0], })
+        }
     }
 
     /// Puts the byte representation into `Vec<u8>`.
@@ -69,7 +76,7 @@ impl NodeId {
             *dst = decode_digit(pair[0], i * 2, s)? * 16 + decode_digit(pair[1], i * 2 + 1, s)?;
         }
 
-        Ok(NodeId(result))
+        Self::from_raw_bytes(result).map_err(Into::into)
     }
 
     /// Generic wrapper for parsing that is used to implement parsing from multiple types.
@@ -177,7 +184,10 @@ impl<'a> TryFrom<&'a [u8]> for NodeId {
 
     #[inline]
     fn try_from(slice: &'a [u8]) -> Result<Self, Self::Error> {
-        Ok(NodeId(slice.try_into().map_err(|_| DecodeError { len: slice.len() })?))
+        let bytes = slice.try_into()
+            .map_err(|_| DecodeError { error: DecodeErrorInner::InvalidLen(slice.len()) })?;
+
+        NodeId::from_raw_bytes(bytes).map_err(Into::into)
     }
 }
 
@@ -230,18 +240,43 @@ impl std::borrow::Borrow<[u8]> for NodeId {
 }
 
 /// Error returned when decoding raw bytes fails
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DecodeError {
-    len: usize,
+    error: DecodeErrorInner,
 }
 
-impl fmt::Display for DecodeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "invalid length {} bytes, the lenght must be 33 bytes", self.len)
+#[derive(Debug, Clone)]
+enum DecodeErrorInner {
+    InvalidLen(usize),
+    InvalidNodeId(InvalidNodeId),
+}
+
+impl From<InvalidNodeId> for DecodeError {
+    fn from(value: InvalidNodeId) -> Self {
+        DecodeError {
+            error: DecodeErrorInner::InvalidNodeId(value),
+        }
     }
 }
 
-impl std::error::Error for DecodeError {}
+
+impl fmt::Display for DecodeError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self.error {
+            DecodeErrorInner::InvalidLen(len) => write!(f, "invalid length {} bytes, the lenght must be 33 bytes", len),
+            DecodeErrorInner::InvalidNodeId(_) => write!(f, "invalid node ID"),
+        }
+    }
+}
+
+impl std::error::Error for DecodeError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self.error {
+            DecodeErrorInner::InvalidLen(_) => None,
+            DecodeErrorInner::InvalidNodeId(error) => Some(error),
+        }
+    }
+}
 
 /// Error returned when parsing text representation fails.
 #[derive(Debug, Clone)]
@@ -273,6 +308,7 @@ pub(crate) enum ParseErrorInner {
     /// Length != 66 chars
     InvalidLen,
     InvalidChar { pos: usize, c: char, },
+    InvalidNodeId(InvalidNodeId),
 }
 
 impl fmt::Display for ParseErrorInner {
@@ -280,11 +316,44 @@ impl fmt::Display for ParseErrorInner {
         match self {
             ParseErrorInner::InvalidLen => f.write_str("invalid length (must be 66 chars)"),
             ParseErrorInner::InvalidChar { c, pos, } => write!(f, "invalid character '{}' at position {} (must be hex digit)", c, pos),
+            ParseErrorInner::InvalidNodeId(_) => f.write_str("invalid node ID"),
         }
     }
 }
 
-impl std::error::Error for ParseErrorInner {}
+impl std::error::Error for ParseErrorInner {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            ParseErrorInner::InvalidLen | ParseErrorInner::InvalidChar { .. } => None,
+            ParseErrorInner::InvalidNodeId(error) => Some(error),
+        }
+    }
+}
+
+impl From<InvalidNodeId> for ParseErrorInner {
+    fn from(value: InvalidNodeId) -> Self {
+        ParseErrorInner::InvalidNodeId(value)
+    }
+}
+
+/// Error returned when attempting to convert bytes to `NodeId`
+///
+/// Conversions to `NodeId` perform a cheap basic sanity check and return this error if it doesn't
+/// pass.
+#[derive(Debug, Clone)]
+pub struct InvalidNodeId {
+    bad_byte: u8,
+}
+
+impl fmt::Display for InvalidNodeId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // We currently only detect zeroth byte
+        write!(f, "invalid zeroth byte {:02x}", self.bad_byte)?;
+        Ok(())
+    }
+}
+
+impl std::error::Error for InvalidNodeId {}
 
 /// Implementation of `parse_arg::ParseArg` trait
 #[cfg(feature = "parse_arg")]
@@ -306,7 +375,7 @@ mod serde_impl {
     use std::fmt;
     use super::NodeId;
     use serde::{Serialize, Deserialize, Serializer, Deserializer, de::{Visitor, Error}};
-    use std::convert::TryInto;
+    use std::convert::TryFrom;
 
     /// Visitor for human-readable formats
     struct HRVisitor;
@@ -323,8 +392,9 @@ mod serde_impl {
 
             NodeId::parse_raw(v).map_err(|error| {
                 match error {
-                    ParseErrorInner::InvalidLen => E::invalid_length(v.len(), &"66 hex digits"),
+                    ParseErrorInner::InvalidLen => E::invalid_length(v.len(), &"66 hex digits beginning with 02 or 03"),
                     ParseErrorInner::InvalidChar { c, pos: _, } => E::invalid_value(serde::de::Unexpected::Char(c), &"a hex digit"),
+                    ParseErrorInner::InvalidNodeId(error) => E::invalid_value(serde::de::Unexpected::Bytes(&[error.bad_byte]), &"02 or 03"),
                 }
             })
         }
@@ -341,7 +411,14 @@ mod serde_impl {
         }
 
         fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E> where E: Error {
-            v.try_into().map_err(|_| E::invalid_length(v.len(), &"33 bytes"))
+            use super::DecodeErrorInner;
+
+            NodeId::try_from(v).map_err(|error| {
+                match error.error {
+                    DecodeErrorInner::InvalidLen(len) => E::invalid_length(len, &"33 bytes"),
+                    DecodeErrorInner::InvalidNodeId(error) => E::invalid_value(serde::de::Unexpected::Bytes(&[error.bad_byte]), &"02 or 03"),
+                }
+            })
         }
     }
 
@@ -456,18 +533,30 @@ mod tests {
 
     #[test]
     fn one_less() {
-        assert!("01234567890123456789012345678901234567890123456789012345678901234".parse::<NodeId>().is_err());
+        assert!("02234567890123456789012345678901234567890123456789012345678901234".parse::<NodeId>().is_err());
     }
 
     #[test]
     fn one_more() {
-        assert!("0123456789012345678901234567890123456789012345678901234567890123456".parse::<NodeId>().is_err());
+        assert!("0223456789012345678901234567890123456789012345678901234567890123456".parse::<NodeId>().is_err());
     }
 
     #[test]
-    fn correct() {
-        let parsed = "012345678901234567890123456789012345678901234567890123456789abcdef".parse::<NodeId>().unwrap();
-        let expected = b"\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\xab\xcd\xef";
+    fn invalid_node_id() {
+        assert!("012345678901234567890123456789012345678901234567890123456789abcdef".parse::<NodeId>().is_err());
+    }
+
+    #[test]
+    fn correct_02() {
+        let parsed = "022345678901234567890123456789012345678901234567890123456789abcdef".parse::<NodeId>().unwrap();
+        let expected = b"\x02\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\xab\xcd\xef";
+        assert_eq!(parsed.0, *expected);
+    }
+
+    #[test]
+    fn correct_03() {
+        let parsed = "032345678901234567890123456789012345678901234567890123456789abcdef".parse::<NodeId>().unwrap();
+        let expected = b"\x03\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\x01\x23\x45\x67\x89\xab\xcd\xef";
         assert_eq!(parsed.0, *expected);
     }
 
