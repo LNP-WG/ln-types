@@ -1,0 +1,24 @@
+name: Test and Build
+
+on: [push, pull_request]
+
+jobs:
+  test-lib:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: [stable, nightly, 1.48.1]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Swatinem/rust-cache@v1.2.0
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features
