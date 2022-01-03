@@ -60,6 +60,10 @@
 #[cfg(feature = "postgres-types")]
 extern crate postgres_types_real as postgres_types;
 
+#[cfg(feature = "secp256k1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
+pub extern crate secp256k1;
+
 #[macro_use]
 mod macros;
 
