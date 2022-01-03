@@ -2,9 +2,9 @@
 //!
 //! This module provides the [`Amount`] type and the related error types.
 
-use std::fmt;
-use std::str::FromStr;
-use std::convert::TryFrom;
+use core::fmt;
+use core::str::FromStr;
+use core::convert::TryFrom;
 
 const SATS_IN_BTC: u64 = 100_000_000;
 const MAX_MONEY_SAT: u64 = 21_000_000 * SATS_IN_BTC;
@@ -203,7 +203,7 @@ impl fmt::Debug for Amount {
 
 
 /// Panics on overflow
-impl std::ops::Add for Amount {
+impl core::ops::Add for Amount {
     type Output = Self;
 
     #[inline]
@@ -221,7 +221,7 @@ impl std::ops::Add for Amount {
 }
 
 /// Panics on overflow
-impl std::ops::AddAssign for Amount {
+impl core::ops::AddAssign for Amount {
     #[inline]
     fn add_assign(&mut self, rhs: Amount) {
         *self = *self + rhs;
@@ -229,7 +229,7 @@ impl std::ops::AddAssign for Amount {
 }
 
 /// Panics on overflow
-impl std::ops::Sub for Amount {
+impl core::ops::Sub for Amount {
     type Output = Self;
 
     #[inline]
@@ -239,7 +239,7 @@ impl std::ops::Sub for Amount {
 }
 
 /// Panics on overflow
-impl std::ops::SubAssign for Amount {
+impl core::ops::SubAssign for Amount {
     #[inline]
     fn sub_assign(&mut self, rhs: Amount) {
         *self = *self - rhs
@@ -247,7 +247,7 @@ impl std::ops::SubAssign for Amount {
 }
 
 /// Panics on overflow
-impl std::ops::Mul<u64> for Amount {
+impl core::ops::Mul<u64> for Amount {
     type Output = Self;
 
     fn mul(self, rhs: u64) -> Self::Output {
@@ -259,7 +259,7 @@ impl std::ops::Mul<u64> for Amount {
 }
 
 /// Panics on overflow
-impl std::ops::Mul<Amount> for u64 {
+impl core::ops::Mul<Amount> for u64 {
     type Output = Amount;
 
     fn mul(self, rhs: Amount) -> Self::Output {
@@ -268,13 +268,13 @@ impl std::ops::Mul<Amount> for u64 {
 }
 
 /// Panics on overflow
-impl std::ops::MulAssign<u64> for Amount {
+impl core::ops::MulAssign<u64> for Amount {
     fn mul_assign(&mut self, rhs: u64) {
         *self = *self * rhs;
     }
 }
 
-impl std::ops::Div<u64> for Amount {
+impl core::ops::Div<u64> for Amount {
     type Output = Self;
 
     fn div(self, rhs: u64) -> Self::Output {
@@ -282,13 +282,13 @@ impl std::ops::Div<u64> for Amount {
     }
 }
 
-impl std::ops::DivAssign<u64> for Amount {
+impl core::ops::DivAssign<u64> for Amount {
     fn div_assign(&mut self, rhs: u64) {
         *self = *self / rhs;
     }
 }
 
-impl std::ops::Rem<u64> for Amount {
+impl core::ops::Rem<u64> for Amount {
     type Output = Self;
 
     fn rem(self, rhs: u64) -> Self::Output {
@@ -296,7 +296,7 @@ impl std::ops::Rem<u64> for Amount {
     }
 }
 
-impl std::ops::RemAssign<u64> for Amount {
+impl core::ops::RemAssign<u64> for Amount {
     fn rem_assign(&mut self, rhs: u64) {
         *self = *self % rhs;
     }
@@ -373,12 +373,12 @@ impl std::error::Error for ParseError {
 /// This is private to avoid committing to a representation.
 #[derive(Debug, Clone)]
 enum ParseErrorInner {
-    ParseInt(std::num::ParseIntError),
+    ParseInt(core::num::ParseIntError),
     Overflow(OverflowError),
 }
 
-impl From<std::num::ParseIntError> for ParseErrorInner {
-    fn from(value: std::num::ParseIntError) -> Self {
+impl From<core::num::ParseIntError> for ParseErrorInner {
+    fn from(value: core::num::ParseIntError) -> Self {
         ParseErrorInner::ParseInt(value)
     }
 }
@@ -460,7 +460,7 @@ mod impl_bitcoin {
 
 #[cfg(feature = "parse_arg")]
 mod parse_arg_impl {
-    use std::fmt;
+    use core::fmt;
     use super::Amount;
 
     impl parse_arg::ParseArgFromStr for Amount {
@@ -472,7 +472,7 @@ mod parse_arg_impl {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use std::fmt;
+    use core::fmt;
     use super::Amount;
     use serde::{Serialize, Deserialize, Serializer, Deserializer, de::{Visitor, Error}};
 
@@ -515,7 +515,7 @@ mod postgres_impl {
     use postgres_types::{ToSql, FromSql, IsNull, Type};
     use bytes::BytesMut;
     use std::error::Error;
-    use std::convert::TryInto;
+    use core::convert::TryInto;
 
     /// Stored as `i64` msats
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]

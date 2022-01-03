@@ -2,9 +2,9 @@
 //!
 //! This module provides the [`NodeId`] type and the related error types.
 
-use std::convert::{TryFrom, TryInto};
-use std::str::FromStr;
-use std::fmt;
+use core::convert::{TryFrom, TryInto};
+use core::str::FromStr;
+use core::fmt;
 
 /// Byte representation of a node identifier.
 ///
@@ -227,13 +227,13 @@ impl AsRef<[u8]> for NodeId {
     }
 }
 
-impl std::borrow::Borrow<[u8; 33]> for NodeId {
+impl core::borrow::Borrow<[u8; 33]> for NodeId {
     fn borrow(&self) -> &[u8; 33] {
         &self.0
     }
 }
 
-impl std::borrow::Borrow<[u8]> for NodeId {
+impl core::borrow::Borrow<[u8]> for NodeId {
     fn borrow(&self) -> &[u8] {
         &self.0
     }
@@ -358,7 +358,7 @@ impl std::error::Error for InvalidNodeId {}
 /// Implementation of `parse_arg::ParseArg` trait
 #[cfg(feature = "parse_arg")]
 mod parse_arg_impl {
-    use std::fmt;
+    use core::fmt;
     use super::NodeId;
 
     #[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]
@@ -372,10 +372,10 @@ mod parse_arg_impl {
 /// Implementations of `serde` traits
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use std::fmt;
+    use core::fmt;
     use super::NodeId;
     use serde::{Serialize, Deserialize, Serializer, Deserializer, de::{Visitor, Error}};
-    use std::convert::TryFrom;
+    use core::convert::TryFrom;
 
     /// Visitor for human-readable formats
     struct HRVisitor;
@@ -454,7 +454,7 @@ mod postgres_impl {
     use postgres_types::{ToSql, FromSql, IsNull, Type};
     use bytes::BytesMut;
     use std::error::Error;
-    use std::convert::TryInto;
+    use core::convert::TryInto;
 
     /// Supports `BYTEA`, `TEXT`, and `VARCHAR`.
     ///
@@ -462,7 +462,7 @@ mod postgres_impl {
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for NodeId {
         fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
-            use std::fmt::Write;
+            use core::fmt::Write;
 
             match *ty {
                 Type::BYTEA => (&self.0 as &[_]).to_sql(ty, out),

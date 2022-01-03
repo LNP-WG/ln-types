@@ -7,9 +7,9 @@
 
 #![cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
 
-use std::convert::{TryFrom, TryInto};
-use std::str::FromStr;
-use std::fmt;
+use core::convert::{TryFrom, TryInto};
+use core::str::FromStr;
+use core::fmt;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use crate::NodeId;
 
@@ -209,13 +209,13 @@ impl AsMut<PublicKey> for NodePubkey {
     }
 }
 
-impl std::borrow::Borrow<PublicKey> for NodePubkey {
+impl core::borrow::Borrow<PublicKey> for NodePubkey {
     fn borrow(&self) -> &PublicKey {
         &self.0
     }
 }
 
-impl std::borrow::BorrowMut<PublicKey> for NodePubkey {
+impl core::borrow::BorrowMut<PublicKey> for NodePubkey {
     fn borrow_mut(&mut self) -> &mut PublicKey {
         &mut self.0
     }
@@ -331,7 +331,7 @@ enum ParseErrorInner {
 /// Implementation of `parse_arg::ParseArg` trait
 #[cfg(feature = "parse_arg")]
 mod parse_arg_impl {
-    use std::fmt;
+    use core::fmt;
     use super::NodePubkey;
 
     #[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]
@@ -373,7 +373,7 @@ mod postgres_impl {
     use postgres_types::{ToSql, FromSql, IsNull, Type};
     use bytes::BytesMut;
     use std::error::Error;
-    use std::convert::TryInto;
+    use core::convert::TryInto;
 
     /// Supports `BYTEA`, `TEXT`, and `VARCHAR`.
     ///

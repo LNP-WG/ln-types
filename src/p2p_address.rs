@@ -2,10 +2,10 @@
 //!
 //! This module provides the [`P2PAddress`] type and the related error types.
 
-use std::borrow::Borrow;
-use std::convert::TryFrom;
-use std::str::FromStr;
-use std::fmt;
+use core::borrow::Borrow;
+use core::convert::TryFrom;
+use core::str::FromStr;
+use core::fmt;
 use std::io;
 use crate::NodeId;
 
@@ -323,7 +323,7 @@ impl std::error::Error for ParseError {
 enum ParseErrorInner {
     MissingAtSymbol,
     InvalidNodeId(crate::node_id::ParseError),
-    InvalidPortNumber(std::num::ParseIntError),
+    InvalidPortNumber(core::num::ParseIntError),
     InvalidIpv6(std::net::AddrParseError),
 }
 
@@ -354,7 +354,7 @@ impl std::error::Error for ParseErrorInner {
 /// This is the iterator used in the implementation of [`std::net::ToSocketAddrs`] for [`HostPort`]
 /// and [`P2PAddress`].
 pub struct SocketAddrs {
-    iter: std::iter::Chain<std::option::IntoIter<std::net::SocketAddr>, std::vec::IntoIter<std::net::SocketAddr>>
+    iter: core::iter::Chain<core::option::IntoIter<std::net::SocketAddr>, std::vec::IntoIter<std::net::SocketAddr>>
 }
 
 impl Iterator for SocketAddrs {
@@ -408,7 +408,7 @@ impl std::error::Error for ResolveOnion {}
 
 #[cfg(feature = "parse_arg")]
 mod parse_arg_impl {
-    use std::fmt;
+    use core::fmt;
     use super::P2PAddress;
 
     impl parse_arg::ParseArgFromStr for P2PAddress {
@@ -420,10 +420,10 @@ mod parse_arg_impl {
 
 #[cfg(feature = "serde")]
 mod serde_impl {
-    use std::fmt;
+    use core::fmt;
     use super::P2PAddress;
     use serde::{Serialize, Deserialize, Serializer, Deserializer, de::{Visitor, Error}};
-    use std::convert::TryInto;
+    use core::convert::TryInto;
 
     struct HRVisitor;
 
@@ -493,7 +493,7 @@ mod postgres_impl {
     #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for P2PAddress {
         fn to_sql(&self, _ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
-            use std::fmt::Write;
+            use core::fmt::Write;
 
             write!(out, "{}", self).map(|_| IsNull::No).map_err(|error| Box::new(error) as _)
         }
