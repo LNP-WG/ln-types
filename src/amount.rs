@@ -33,6 +33,9 @@ impl Amount {
     /// Zero bitcoins.
     pub const ZERO: Amount = Amount(0);
 
+    /// One millisatoshi
+    pub const ONE_MSAT: Amount = Amount(1);
+
     /// 21 million bitcoins.
     pub const MAX: Amount = Amount(MAX_MONEY_MSAT);
 
