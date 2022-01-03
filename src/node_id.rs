@@ -13,6 +13,14 @@ use std::fmt;
 /// By avoiding cryptography it is significantly more performant but may make debugging harder.
 /// It is therefore recommended to perform checking at system boundaries where performance is not
 /// very important - e.g. user inputs.
+///
+/// ## Example
+///
+/// ```
+/// let marvin_str = "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482";
+/// let marvin = marvin_str.parse::<ln_types::NodeId>().unwrap();
+/// assert_eq!(marvin.to_string(), marvin_str);
+/// ```
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct NodeId([u8; 33]);
 

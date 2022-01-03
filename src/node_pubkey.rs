@@ -21,6 +21,14 @@ use crate::NodeId;
 /// * `NodeId` can not perform any cryptographic operations itself.
 /// * `NodePubkey`, despite its field being public, maintains more invariants.
 ///    *In this library*, a valid `NodeId` is **not** guaranteed to be a valid `NodePubkey`
+///
+/// ## Example
+///
+/// ```
+/// let marvin_str = "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482";
+/// let marvin = marvin_str.parse::<ln_types::NodePubkey>().unwrap();
+/// assert_eq!(marvin.to_string(), marvin_str);
+/// ```
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct NodePubkey(
     /// The underlying public key used for cryptographic operations.

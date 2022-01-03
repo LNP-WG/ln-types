@@ -151,6 +151,16 @@ impl std::error::Error for NotIpAddr {}
 ///
 /// **Serde limitations:** non-human-readable formats are not supported yet as it wasn't decided
 /// what's the best way of doing it. Please state your preference in GitHub issues.
+///
+/// # Example
+///
+/// ```
+/// let marvin_str = "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482@ln-ask.me";
+/// let marvin = marvin_str.parse::<ln_types::P2PAddress>().unwrap();
+/// assert_eq!(marvin.node_id.to_string(), "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482");
+/// assert!(!marvin.host.is_ip_addr());
+/// assert_eq!(marvin.port, 9735);
+/// ```
 #[derive(Clone)]
 pub struct P2PAddress {
     /// The representation of nodes public key

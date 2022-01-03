@@ -52,6 +52,13 @@ impl Amount {
     /// ## Errors
     ///
     /// This method returns an error if the amount exceeds Bitcoin supply cap
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::from_msat(1000).unwrap();
+    /// assert_eq!(msat, ln_types::Amount::ONE_SAT);
+    /// ```
     #[inline]
     pub fn from_msat(msat: u64) -> Result<Self, OverflowError> {
         if msat > MAX_MONEY_MSAT {
@@ -68,6 +75,13 @@ impl Amount {
     /// ## Errors
     ///
     /// This method returns an error if the amount exceeds Bitcoin supply cap
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::from_sat(100_000_000).unwrap();
+    /// assert_eq!(msat, ln_types::Amount::ONE_BTC);
+    /// ```
     #[inline]
     pub fn from_sat(sat: u64) -> Result<Self, OverflowError> {
         if sat > MAX_MONEY_SAT {
@@ -78,6 +92,13 @@ impl Amount {
     }
 
     /// Converts the value to raw millisatoshis.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::ONE_SAT.to_msat();
+    /// assert_eq!(msat, 1000);
+    /// ```
     #[inline]
     pub fn to_msat(self) -> u64 {
         self.0
@@ -88,6 +109,13 @@ impl Amount {
     /// ## Errors
     ///
     /// This method returns an error if the number of millisatoshis isn't rounded to thousands.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::ONE_SAT.to_sat().unwrap();
+    /// assert_eq!(msat, 1);
+    /// ```
     #[inline]
     pub fn to_sat(self) -> Result<u64, FractionError> {
         if self.0 % 1000 == 0 {
@@ -98,18 +126,39 @@ impl Amount {
     }
 
     /// Converts to satoshis rounding down.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::ONE_MSAT.to_sat_floor();
+    /// assert_eq!(msat, 0);
+    /// ```
     #[inline]
     pub fn to_sat_floor(self) -> u64 {
         self.0 / 1000
     }
 
     /// Converts to satoshis rounding up.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::ONE_MSAT.to_sat_ceiling();
+    /// assert_eq!(msat, 1);
+    /// ```
     #[inline]
     pub fn to_sat_ceiling(self) -> u64 {
         (self.0 + 999) / 1000
     }
 
     /// Converts to satoshis rounding.
+    ///
+    /// ## Example
+    ///
+    /// ```
+    /// let msat = ln_types::Amount::ONE_MSAT.to_sat_round();
+    /// assert_eq!(msat, 0);
+    /// ```
     #[inline]
     pub fn to_sat_round(self) -> u64 {
         (self.0 + 500) / 1000
