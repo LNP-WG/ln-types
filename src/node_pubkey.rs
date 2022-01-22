@@ -295,6 +295,8 @@ impl From<NodePubkey> for [u8; 33] {
 }
 
 /// Error returned when parsing text representation fails.
+///
+/// **Important: consumer code MUST NOT match on this using `ParseError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The string that was attempted to be parsed

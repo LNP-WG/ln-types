@@ -240,6 +240,8 @@ impl core::borrow::Borrow<[u8]> for NodeId {
 }
 
 /// Error returned when decoding raw bytes fails
+///
+/// **Important: consumer code MUST NOT match on this using `DecodeError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct DecodeError {
     error: DecodeErrorInner,
@@ -279,6 +281,8 @@ impl std::error::Error for DecodeError {
 }
 
 /// Error returned when parsing text representation fails.
+///
+/// **Important: consumer code MUST NOT match on this using `ParseError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The string that was attempted to be parsed
@@ -340,6 +344,8 @@ impl From<InvalidNodeId> for ParseErrorInner {
 ///
 /// Conversions to `NodeId` perform a cheap basic sanity check and return this error if it doesn't
 /// pass.
+///
+/// **Important: consumer code MUST NOT match on this using `InvalidNodeId { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct InvalidNodeId {
     bad_byte: u8,

@@ -54,6 +54,8 @@ enum HostInner {
 /// Type representing network address of an LN node.
 ///
 /// This type can avoid allocations if the value is an IP address.
+///
+/// **Important: consumer code MUST NOT match on this using `Host { .. }` syntax.
 #[derive(Clone)]
 pub struct Host(HostInner);
 
@@ -130,6 +132,8 @@ impl TryFrom<Host> for std::net::IpAddr {
 }
 
 /// Error returned when attempting to *convert* (not resolve) hostname to IP address.
+///
+/// **Important: consumer code MUST NOT match on this using `NotIpAddr { .. }` syntax.
 #[derive(Debug)]
 pub struct NotIpAddr(String);
 
@@ -296,6 +300,8 @@ impl TryFrom<Box<str>> for P2PAddress {
 }
 
 /// Error returned when parsing text representation fails.
+///
+/// **Important: consumer code MUST NOT match on this using `ParseError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct ParseError {
     input: String,
@@ -395,6 +401,7 @@ impl std::net::ToSocketAddrs for P2PAddress {
 }
 
 /// Error type returned when attempting to resolve onion address.
+// If this is made public it should be future-proofed like other errors.
 #[derive(Debug)]
 struct ResolveOnion;
 

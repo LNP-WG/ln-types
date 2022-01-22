@@ -347,6 +347,8 @@ impl TryFrom<Box<str>> for Amount {
 }
 
 /// Error returned when parsing text representation fails.
+///
+/// **Important: consumer code MUST NOT match on this using `ParseError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The string that was attempted to be parsed
@@ -408,6 +410,8 @@ impl std::error::Error for ParseErrorInner {
 }
 
 /// Error returned when a conversion exceeds Bitcoin supply cap.
+///
+/// **Important: consumer code MUST NOT match on this using `OverflowError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct OverflowError {
     amount: u64,
@@ -423,6 +427,8 @@ impl fmt::Display for OverflowError {
 impl std::error::Error for OverflowError {}
 
 /// Error returned when a conversion to satoshis fails due to the value not being round.
+///
+/// **Important: consumer code MUST NOT match on this using `FractionError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct FractionError {
     amount: u64,

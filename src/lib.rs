@@ -51,6 +51,15 @@
 //! **not** be obviously broken or surprising, and must **not** interact with other implementations
 //! in surprising ways.
 //!
+//! ## Versioning
+//!
+//! This crate uses standard Rust Semver with one special exception:
+//! **Matching on fully private structs is not allowed and so changing an
+//! all-private struct to an enum is considered non-breaking change even
+//! though the consumer code matching on it would break!**
+//!
+//! See [Rust internals discussion](https://internals.rust-lang.org/t/disallow-matching-on-all-private-structs/15993) to learn more.
+//!
 //! ## MSRV
 //!
 //! The minimum supported Rust version is 1.48 but it's possible that it'll be decreased further.
