@@ -24,22 +24,42 @@
 //! ## Integrations
 //!
 //! The crate aims to be interoperable with other crates via optional dependencies.
-//! Currently available integrations (activate using features of the same name):
 //!
-//! * [`bitcoin`] - converting between types
+//! ### Supported external crates
+//!
+//! Ativate using features of the same name.
+//!
+//! * `std` - enables [`P2PAddress`] and implements [`std::error::Error`] for error types.
+//!           Enabled by default, implies `alloc.
+//! * `alloc` - enables conversions from/to heap-allocated types as well as additional error
+//!             information.
+//! * [`bitcoin`] - converting between types, you should use `bitcoin_std` feature if you need
+//!                 `std`.
 //! * [`serde`] - serialization and deserialization of types
 //! * [`postgres-types`](postgres_types) - storing and retrieving from SQL
 //! * [`parse_arg`] - parsing arguments into types in this crate
 //! * [`secp256k1`] - provides `NodePubkey`
 //! * [`slog`] - provides `slog::Value` and (where relevant) `slog::KV` implementations for the types
 //!
-//! Additional features:
+//! **Important: some combinations may benefit from additional features!**
+//! See below.
+//!
+//! ### Additional features
 //!
 //! * `node_pubkey_verify` - convenience function for verifying messages signed with
 //!                          [`NodePubkey`], implies `secp256k1/bitcoin_hashes`
 //! * `node_pubkey_recovery` - convenience function for verifying lightning messages
 //!                            signed with [`NodePubkey`], implies `node_pubkey_verify` and
 //!                            `secp256k1/recovery`
+//! * `bitcoin_std` - enables `std` feature in `bitcoin`, currently just for convenience
+//! * `bitcoin_no_std` - enables `no_std` feature in `bitcoin`, currently just for convenience
+//! * `secp256k1_std` - required for [`node_pubkey::ParseError`] to return `secp256k1::Error` from
+//!                     `source()` method of [`std::error::Error`]
+//! * `serde_alloc` - required for specialization of `serde::de::Visitor::visit_string` method to
+//!                   avoid allocation
+//! * `serde_std` - currently just implies `serde_alloc` and `std`, may be important for error
+//!                 handling in the future
+//! * `slog_std` - required for error types to use [`slog::Serializer::emit_error`] for logging
 //!
 //! Feel free to contribute your own!
 //!
@@ -50,6 +70,17 @@
 //! The rules around adding a new integration are lax: the dependency must be optional, must
 //! **not** be obviously broken or surprising, and must **not** interact with other implementations
 //! in surprising ways.
+//!
+//! ### `no_std` support
+//!
+//! This crate works without `std` or `alloc` with these limitations/differences:
+//!
+//! * [`P2PAddress`] is unavailable without `std`
+//! * Without `std` all error types display all sources delimited by `: `, with `std` they are
+//!   returned from the [`source()`](std::error::Error::source) method instead.
+//! * Due to unusual `no_std` support in the [`bitcoin`] crate this one is also unusual - enabling
+//!  `bitcoin` without `bitcoin_std` or `bitcoin_no_std` will lead to error (but it's still sensible
+//!  to do in library crates - the binary crate will have to choose)
 //!
 //! ## Versioning
 //!
@@ -74,6 +105,14 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
+#![no_std]
+
+#[cfg(any(feature = "std", test))]
+extern crate std;
+
+#[cfg(any(feature = "alloc", test))]
+extern crate alloc;
+
 #[cfg(feature = "postgres-types")]
 extern crate postgres_types_real as postgres_types;
 
@@ -83,17 +122,22 @@ pub extern crate secp256k1;
 
 #[macro_use]
 mod macros;
+#[macro_use]
+pub(crate) mod err_fmt;
 
 pub mod node_id;
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub mod p2p_address;
 pub mod amount;
 #[cfg(feature = "secp256k1")]
 pub mod node_pubkey;
 
 pub use node_id::NodeId;
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub use p2p_address::P2PAddress;
 pub use amount::Amount;
 #[cfg(feature = "secp256k1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
 pub use node_pubkey::NodePubkey;
-

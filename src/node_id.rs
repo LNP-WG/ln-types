@@ -6,6 +6,9 @@ use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::fmt;
 
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, string::String, vec::Vec};
+
 /// Byte representation of a node identifier.
 ///
 /// This type is used when referring to nodes without doing cryptographic operations.
@@ -42,6 +45,8 @@ impl NodeId {
     ///
     /// This is meant for convenience around APIs that require `Vec<u8>`. Since it allocates it's
     /// best to avoid it if possible.
+    #[cfg(feature = "alloc")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_vec(self) -> Vec<u8> {
         self.0.to_vec()
     }
@@ -80,6 +85,7 @@ impl NodeId {
     }
 
     /// Generic wrapper for parsing that is used to implement parsing from multiple types.
+    #[cfg(feature = "alloc")]
     #[inline]
     fn internal_parse<S: AsRef<str> + Into<String>>(s: S) -> Result<Self, ParseError> {
         Self::parse_raw(s.as_ref()).map_err(|error| ParseError {
@@ -88,6 +94,13 @@ impl NodeId {
         })
     }
 
+    #[cfg(not(feature = "alloc"))]
+    #[inline]
+    fn internal_parse<S: AsRef<str>>(s: S) -> Result<Self, ParseError> {
+        Self::parse_raw(s.as_ref()).map_err(|error| ParseError {
+            reason: error,
+        })
+    }
     /// Writes the fill character required number of times.
     fn prefill(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use fmt::Write;
@@ -160,6 +173,8 @@ impl<'a> TryFrom<&'a str> for NodeId {
 }
 
 /// Expects hex representation
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<String> for NodeId {
     type Error = ParseError;
 
@@ -170,6 +185,8 @@ impl TryFrom<String> for NodeId {
 }
 
 /// Expects hex representation
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<str>> for NodeId {
     type Error = ParseError;
 
@@ -191,6 +208,8 @@ impl<'a> TryFrom<&'a [u8]> for NodeId {
     }
 }
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Vec<u8>> for NodeId {
     type Error = DecodeError;
 
@@ -200,6 +219,8 @@ impl TryFrom<Vec<u8>> for NodeId {
     }
 }
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<[u8]>> for NodeId {
     type Error = DecodeError;
 
@@ -266,11 +287,13 @@ impl fmt::Display for DecodeError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self.error {
             DecodeErrorInner::InvalidLen(len) => write!(f, "invalid length {} bytes, the lenght must be 33 bytes", len),
-            DecodeErrorInner::InvalidNodeId(_) => write!(f, "invalid node ID"),
+            DecodeErrorInner::InvalidNodeId(error) => write_err!(f, "invalid node ID"; error),
         }
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for DecodeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.error {
@@ -286,6 +309,7 @@ impl std::error::Error for DecodeError {
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The string that was attempted to be parsed
+    #[cfg(feature = "alloc")]
     input: String,
     /// Information about what exactly went wrong
     reason: ParseErrorInner,
@@ -293,10 +317,12 @@ pub struct ParseError {
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to parse '{}' as Lightning Network node ID", self.input)
+        write_err!(f, "failed to parse{} Lightning Network node ID", opt_fmt!("alloc", format_args!(" '{}' as", &self.input)); &self.reason)
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseError {
     #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -320,11 +346,13 @@ impl fmt::Display for ParseErrorInner {
         match self {
             ParseErrorInner::InvalidLen => f.write_str("invalid length (must be 66 chars)"),
             ParseErrorInner::InvalidChar { c, pos, } => write!(f, "invalid character '{}' at position {} (must be hex digit)", c, pos),
-            ParseErrorInner::InvalidNodeId(_) => f.write_str("invalid node ID"),
+            ParseErrorInner::InvalidNodeId(error) => write_err!(f, "invalid node ID"; error),
         }
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -354,11 +382,13 @@ pub struct InvalidNodeId {
 impl fmt::Display for InvalidNodeId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // We currently only detect zeroth byte
-        write!(f, "invalid zeroth byte {:02x}", self.bad_byte)?;
+        write!(f, "invalid zeroth byte 0x{:02x}", self.bad_byte)?;
         Ok(())
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for InvalidNodeId {}
 
 /// Implementation of `parse_arg::ParseArg` trait
@@ -456,6 +486,7 @@ mod serde_impl {
 /// Implementations of `postgres-types` traits
 #[cfg(feature = "postgres-types")]
 mod postgres_impl {
+    use alloc::boxed::Box;
     use super::NodeId;
     use postgres_types::{ToSql, FromSql, IsNull, Type};
     use bytes::BytesMut;
@@ -569,5 +600,15 @@ mod tests {
     #[test]
     fn invalid_digit() {
         assert!("g12345678901234567890123456789012345678901234567890123456789012345".parse::<NodeId>().is_err());
+    }
+
+    chk_err_impl! {
+        parse_node_id_error_empty, "", NodeId, [
+            "failed to parse '' as Lightning Network node ID",
+            "invalid length (must be 66 chars)",
+        ], [
+            "failed to parse Lightning Network node ID",
+            "invalid length (must be 66 chars)",
+        ];
     }
 }

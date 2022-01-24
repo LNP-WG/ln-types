@@ -9,6 +9,9 @@ use core::fmt;
 use std::io;
 use crate::NodeId;
 
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, string::String, vec::Vec, borrow::ToOwned, string::ToString};
+
 const LN_DEFAULT_PORT: u16 = 9735;
 
 /// Abstracts over string operations.
@@ -310,7 +313,7 @@ pub struct ParseError {
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to parse '{}' as Lightning Network P2P address", self.input)
+        write_err!(f, "failed to parse '{}' as Lightning Network P2P address", self.input; &self.reason)
     }
 }
 
@@ -338,8 +341,8 @@ impl fmt::Display for ParseErrorInner {
         match self {
             ParseErrorInner::MissingAtSymbol => f.write_str("missing '@' symbol"),
             ParseErrorInner::InvalidNodeId(error) => fmt::Display::fmt(error, f),
-            ParseErrorInner::InvalidPortNumber(_) => f.write_str("invalid port number"),
-            ParseErrorInner::InvalidIpv6(_) => f.write_str("invalid IPv6 address"),
+            ParseErrorInner::InvalidPortNumber(error) => write_err!(f, "invalid port number"; error),
+            ParseErrorInner::InvalidIpv6(error) => write_err!(f, "invalid IPv6 address"; error),
         }
     }
 }
@@ -432,6 +435,9 @@ mod serde_impl {
     use serde::{Serialize, Deserialize, Serializer, Deserializer, de::{Visitor, Error}};
     use core::convert::TryInto;
 
+    #[cfg(feature = "serde_alloc")]
+    use alloc::string::String;
+
     struct HRVisitor;
 
     impl<'de> Visitor<'de> for HRVisitor {
@@ -447,6 +453,7 @@ mod serde_impl {
             })
         }
 
+        #[cfg(feature = "serde_alloc")]
         fn visit_string<E>(self, v: String) -> Result<Self::Value, E> where E: Error {
             v.try_into().map_err(|error| {
                 E::custom(error)
@@ -493,6 +500,7 @@ mod serde_impl {
 
 #[cfg(feature = "postgres-types")]
 mod postgres_impl {
+    use alloc::boxed::Box;
     use super::P2PAddress;
     use postgres_types::{ToSql, FromSql, IsNull, Type};
     use bytes::BytesMut;
@@ -566,6 +574,7 @@ mod slog_impl {
 #[cfg(test)]
 mod tests {
     use super::P2PAddress;
+    use alloc::{format, string::ToString};
 
     #[test]
     fn empty() {
@@ -614,5 +623,18 @@ mod tests {
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
         assert_eq!(output, input);
+    }
+
+    chk_err_impl! {
+        parse_p2p_address_error_empty, "", P2PAddress, ["failed to parse '' as Lightning Network P2P address", "missing '@' symbol"], ["failed to parse Lightning Network P2P address", "missing '@' symbol"];
+        parse_p2p_address_error_empty_node_id, "@127.0.0.1", P2PAddress, [
+            "failed to parse '@127.0.0.1' as Lightning Network P2P address",
+            "failed to parse '' as Lightning Network node ID",
+            "invalid length (must be 66 chars)",
+        ], [
+            "failed to parse Lightning Network P2P address",
+            "failed to parse Lightning Network node ID",
+            "invalid length (must be 66 chars)",
+        ];
     }
 }

@@ -17,8 +17,107 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
-      - name: test
+      - name: test-all-features
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-features
+      - name: test-default-features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+      - name: test-no-features
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features
+      - name: test-feature-alloc
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=alloc
+      - name: test-feature-postgres-types
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=postgres-types
+      - name: test-feature-node_pubkey_verify
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=node_pubkey_verify
+      - name: test-feature-node_pubkey_recovery
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=node_pubkey_recovery
+      - name: test-feature-bitcoin_std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=bitcoin_std
+      - name: test-feature-bitcoin_no_std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=bitcoin_no_std
+      - name: test-feature-serde
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=serde
+      - name: test-feature-serde-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=serde_std
+      - name: test-feature-serde-alloc
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=serde_alloc
+      - name: test-feature-parse_arg
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=parse_arg
+      - name: test-feature-secp256k1
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=secp256k1
+      - name: test-feature-secp256k1-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=secp256k1_std
+      - name: test-feature-slog
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=slog
+      - name: test-feature-slog-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=slog_std
+      - name: test-compat-slog-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=slog,std
+      - name: test-compat-serde-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=serde,std
+      - name: test-compat-serde-alloc
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=serde,alloc
+      - name: test-compat-secp256k1-std
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=secp256k1,std

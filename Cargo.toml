@@ -15,18 +15,27 @@ features = ["serde", "node_pubkey_verify", "node_pubkey_recovery", "bitcoin/use-
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-postgres-types = ["postgres-types-real", "bytes"]
+default = ["std"]
+std = ["alloc"]
+alloc = []
+postgres-types = ["postgres-types-real", "bytes", "std"]
 node_pubkey_verify = ["secp256k1/bitcoin_hashes"]
 node_pubkey_recovery = ["node_pubkey_verify", "secp256k1/recovery"]
+bitcoin_std = ["bitcoin/std", "std"]
+bitcoin_no_std = ["bitcoin/no-std", "alloc"]
+secp256k1_std = ["secp256k1/std", "std"]
+serde_alloc = ["alloc", "serde/alloc"]
+serde_std = ["std", "serde_alloc", "serde/std"]
+slog_std = ["std", "slog/std"]
 
 [dependencies]
-serde = { version = "1.0.130", optional = true }
+serde = { version = "1.0.130", optional = true, default-features = false }
 # Warning: don't depend on this as a feature!
 postgres-types-real = { package = "postgres-types", version = "0.2.2", optional = true }
 parse_arg = { version = "0.1.4", optional = true }
-bitcoin = { version = "0.27.1", optional = true }
-secp256k1 = { version = "0.20.3", optional = true }
-slog = { version = "2.7.0", optional = true }
+bitcoin = { version = "0.27.1", optional = true, default-features = false }
+secp256k1 = { version = "0.20.3", optional = true, default-features = false, features = ["alloc"] }
+slog = { version = "2.7.0", optional = true, default-features = false }
 
 # Warning: don't depend on this as a feature!
 bytes = { version = "1.1.0", optional = true }

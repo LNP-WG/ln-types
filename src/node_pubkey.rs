@@ -13,6 +13,9 @@ use core::fmt;
 use secp256k1::{PublicKey, Secp256k1, SecretKey};
 use crate::NodeId;
 
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, string::String, vec::Vec};
+
 /// Newtype over `secp256k1::PublicKey` representing a deserialized key identifying an LN node.
 ///
 /// This can be considered similar to `NodeId` with these differences:
@@ -121,6 +124,7 @@ impl NodePubkey {
     }
 
     /// Generic wrapper for parsing that is used to implement parsing from multiple types.
+    #[cfg(feature = "alloc")]
     fn internal_parse<S: AsRef<str> + Into<String>>(s: S) -> Result<Self, ParseError> {
         match NodeId::parse_raw(s.as_ref()) {
             Ok(node_id) => {
@@ -133,6 +137,24 @@ impl NodePubkey {
             Err(error) => {
                 Err(ParseError {
                     input: s.into(),
+                    reason: ParseErrorInner::NodeId(error),
+                })
+            }
+        }
+    }
+
+    /// Generic wrapper for parsing that is used to implement parsing from multiple types.
+    #[cfg(not(feature = "alloc"))]
+    fn internal_parse<S: AsRef<str>>(s: S) -> Result<Self, ParseError> {
+        match NodeId::parse_raw(s.as_ref()) {
+            Ok(node_id) => {
+                node_id.try_into()
+                    .map_err(|error| ParseError {
+                        reason: ParseErrorInner::Pubkey(error),
+                    })
+            },
+            Err(error) => {
+                Err(ParseError {
                     reason: ParseErrorInner::NodeId(error),
                 })
             }
@@ -242,6 +264,8 @@ impl<'a> TryFrom<&'a str> for NodePubkey {
 }
 
 /// Expects hex representation
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<String> for NodePubkey {
     type Error = ParseError;
 
@@ -252,6 +276,8 @@ impl TryFrom<String> for NodePubkey {
 }
 
 /// Expects hex representation
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<str>> for NodePubkey {
     type Error = ParseError;
 
@@ -270,6 +296,8 @@ impl<'a> TryFrom<&'a [u8]> for NodePubkey {
     }
 }
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Vec<u8>> for NodePubkey {
     type Error = secp256k1::Error;
 
@@ -279,6 +307,8 @@ impl TryFrom<Vec<u8>> for NodePubkey {
     }
 }
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<[u8]>> for NodePubkey {
     type Error = secp256k1::Error;
 
@@ -300,23 +330,29 @@ impl From<NodePubkey> for [u8; 33] {
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The string that was attempted to be parsed
+    #[cfg(feature = "alloc")]
     input: String,
     /// Information about what exactly went wrong
     reason: ParseErrorInner,
 }
 
+/// **Behaves strangely if `std` is enabled without `secp256k1_std`!**
+///
+/// Specifically pubkey error is displayed inline instead of as a source.
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to parse '{}' as Lightning Network node public key", self.input)
+        write_err!(f, "failed to parse{} Lightning Network node public key", opt_fmt!("alloc", format_args!(" '{}' as", &self.input)); &self.reason)
     }
 }
 
+/// **Behaves strangely if `std` is enabled without `secp256k1_std`!**
+///
+/// Specifically pubkey error is displayed inline instead of as a source.
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self.reason {
-            ParseErrorInner::NodeId(error) => error.source(),
-            ParseErrorInner::Pubkey(error) => error.source(),
-        }
+        Some(&self.reason)
     }
 }
 
@@ -328,6 +364,29 @@ enum ParseErrorInner {
     /// Length != 66 chars
     NodeId(crate::node_id::ParseErrorInner),
     Pubkey(secp256k1::Error),
+}
+
+impl fmt::Display for ParseErrorInner {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ParseErrorInner::NodeId(error) => write_err!(f, "invalid node ID"; error),
+            ParseErrorInner::Pubkey(error) => write_err_ext!("secp256k1_std", f, "invalid public key"; error),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+impl std::error::Error for ParseErrorInner {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match &self {
+            ParseErrorInner::NodeId(error) => Some(error),
+            #[cfg(feature = "secp256k1_std")]
+            ParseErrorInner::Pubkey(error) => Some(error),
+            #[cfg(not(feature = "secp256k1_std"))]
+            ParseErrorInner::Pubkey(_) => None,
+        }
+    }
 }
 
 /// Implementation of `parse_arg::ParseArg` trait
@@ -370,6 +429,7 @@ mod serde_impls {
 /// Implementations of `postgres-types` traits
 #[cfg(feature = "postgres-types")]
 mod postgres_impl {
+    use alloc::boxed::Box;
     use super::NodePubkey;
     use crate::NodeId;
     use postgres_types::{ToSql, FromSql, IsNull, Type};
@@ -423,4 +483,55 @@ mod slog_impl {
     }
 
     impl_error_value!(super::ParseError);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::NodePubkey;
+
+    #[test]
+    fn empty() {
+        let error = "".parse::<NodePubkey>().unwrap_err();
+        #[cfg(feature = "alloc")]
+        assert_eq!(error.input, "");
+        match &error.reason {
+            super::ParseErrorInner::NodeId(_) => (),
+            super::ParseErrorInner::Pubkey(error) => panic!("unexpected error variant: Pubkey({:?})", error),
+        }
+    }
+
+    chk_err_impl! {
+        parse_node_pubkey_error_empty, "", NodePubkey, [
+            "failed to parse '' as Lightning Network node public key",
+            "invalid node ID",
+            "invalid length (must be 66 chars)",
+        ], [
+            "failed to parse Lightning Network node public key",
+            "invalid node ID",
+            "invalid length (must be 66 chars)",
+        ];
+    }
+
+    #[cfg(any(not(feature = "std"), feature = "secp256k1_std"))]
+    chk_err_impl! {
+        parse_node_pubkey_error_invalid_pubkey, "020000000000000000000000000000000000000000000000000000000000000000", NodePubkey, [
+            "failed to parse '020000000000000000000000000000000000000000000000000000000000000000' as Lightning Network node public key",
+            "invalid public key",
+            "secp: malformed public key",
+        ], [
+            "failed to parse Lightning Network node public key",
+            "invalid public key",
+            "secp: malformed public key",
+        ];
+    }
+
+    #[cfg(all(feature = "std", not(feature = "secp256k1_std")))]
+    chk_err_impl! {
+        parse_node_pubkey_error_invalid_pubkey, "020000000000000000000000000000000000000000000000000000000000000000", NodePubkey, [
+            "failed to parse '020000000000000000000000000000000000000000000000000000000000000000' as Lightning Network node public key",
+            "invalid public key: secp: malformed public key",
+        ], [
+            "irrelevant, we definitely have std and thus alloc",
+        ];
+    }
 }

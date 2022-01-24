@@ -6,6 +6,9 @@ use core::fmt;
 use core::str::FromStr;
 use core::convert::TryFrom;
 
+#[cfg(feature = "alloc")]
+use alloc::{boxed::Box, string::String};
+
 const SATS_IN_BTC: u64 = 100_000_000;
 const MAX_MONEY_SAT: u64 = 21_000_000 * SATS_IN_BTC;
 const MAX_MONEY_MSAT: u64 = MAX_MONEY_SAT * 1000;
@@ -178,10 +181,20 @@ impl Amount {
     }
 
     /// Generic wrapper for parsing that is used to implement parsing from multiple types.
+    #[cfg(feature = "alloc")]
     #[inline]
     fn internal_parse<S: AsRef<str> + Into<String>>(s: S) -> Result<Self, ParseError> {
         Self::parse_raw(s.as_ref()).map_err(|error| ParseError {
             input: s.into(),
+            reason: error,
+        })
+    }
+
+    /// Generic wrapper for parsing that is used to implement parsing from multiple types.
+    #[cfg(not(feature = "alloc"))]
+    #[inline]
+    fn internal_parse<S: AsRef<str>>(s: S) -> Result<Self, ParseError> {
+        Self::parse_raw(s.as_ref()).map_err(|error| ParseError {
             reason: error,
         })
     }
@@ -326,6 +339,8 @@ impl<'a> TryFrom<&'a str> for Amount {
 
 /// Accepts an unsigned integer up to 21 000 000 BTC
 /// The amount may optionally be followed by denomination ` msat`.
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<String> for Amount {
     type Error = ParseError;
 
@@ -337,6 +352,8 @@ impl TryFrom<String> for Amount {
 
 /// Accepts an unsigned integer up to 21 000 000 BTC
 /// The amount may optionally be followed by denomination ` msat`.
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<str>> for Amount {
     type Error = ParseError;
 
@@ -352,6 +369,7 @@ impl TryFrom<Box<str>> for Amount {
 #[derive(Debug, Clone)]
 pub struct ParseError {
     /// The string that was attempted to be parsed
+    #[cfg(feature = "alloc")]
     input: String,
     /// Information about what exactly went wrong
     reason: ParseErrorInner,
@@ -359,10 +377,12 @@ pub struct ParseError {
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "failed to parse '{}' as millisatoshis", self.input)
+        write_err!(f, "failed to parse{} millisatoshis", opt_fmt!("alloc", format_args!(" '{}' as", &self.input)); &self.reason)
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseError {
     #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -394,12 +414,14 @@ impl From<OverflowError> for ParseErrorInner {
 impl fmt::Display for ParseErrorInner {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ParseErrorInner::ParseInt(_) => f.write_str("invalid integer"),
-            ParseErrorInner::Overflow(_) => f.write_str("value above supply cap"),
+            ParseErrorInner::ParseInt(error) => write_err!(f, "invalid integer"; error),
+            ParseErrorInner::Overflow(error) => write_err!(f, "value above supply cap"; error),
         }
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -424,6 +446,8 @@ impl fmt::Display for OverflowError {
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for OverflowError {}
 
 /// Error returned when a conversion to satoshis fails due to the value not being round.
@@ -436,16 +460,18 @@ pub struct FractionError {
 
 impl fmt::Display for FractionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} millisatoshis can not be converted to satoshis because it's not round to thousands", self.amount)
+        write!(f, "{} millisatoshis can not be converted to satoshis because it's not rounded to thousands", self.amount)
     }
 }
 
+#[cfg(feature = "std")]
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for FractionError {}
 
 #[cfg(feature = "bitcoin")]
 mod impl_bitcoin {
     use super::{Amount, OverflowError, FractionError};
-    use std::convert::TryFrom;
+    use core::convert::TryFrom;
 
     impl TryFrom<bitcoin::Amount> for Amount {
         type Error = OverflowError;
@@ -517,6 +543,7 @@ mod serde_impl {
 
 #[cfg(feature = "postgres-types")]
 mod postgres_impl {
+    use alloc::boxed::Box;
     use super::Amount;
     use postgres_types::{ToSql, FromSql, IsNull, Type};
     use bytes::BytesMut;
@@ -578,5 +605,18 @@ mod tests {
     #[test]
     fn amount_max() {
         assert_eq!(Amount::from_msat(super::MAX_MONEY_MSAT).unwrap(), Amount::MAX);
+    }
+
+    chk_err_impl! {
+        parse_amount_error_empty, "", Amount, ["failed to parse '' as millisatoshis", "invalid integer", "cannot parse integer from empty string"], ["failed to parse millisatoshis", "invalid integer", "cannot parse integer from empty string"];
+        parse_amount_error_overflow, "2100000000000000001", Amount, [
+            "failed to parse '2100000000000000001' as millisatoshis",
+            "value above supply cap",
+            "2100000000000000001 millisatoshis exceeds the maximum number of 21 million bitcoins"
+        ], [
+            "failed to parse millisatoshis",
+            "value above supply cap",
+            "2100000000000000001 millisatoshis exceeds the maximum number of 21 million bitcoins"
+        ];
     }
 }
