@@ -456,26 +456,28 @@ mod serde_impl {
 
     /// Serialized as string to human-readable formats.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// This panics if the format is **not** human-readable because it's not decided how it should
+    /// This fails if the format is **not** human-readable because it's not decided how it should
     /// be done.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for P2PAddress {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+            use serde::ser::Error;
+
             if serializer.is_human_readable() {
                 serializer.collect_str(self)
             } else {
-                unimplemented!("serialization is not yet implemented for non-human-readable formatsi, please file a request");
+                Err(S::Error::custom("serialization is not yet implemented for non-human-readable formats, please file a request"))
             }
         }
     }
 
     /// Deserialized as string from human-readable formats.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// This panics if the format is **not** human-readable because it's not decided how it should
+    /// This fails if the format is **not** human-readable because it's not decided how it should
     /// be done.
     #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for P2PAddress {
@@ -483,7 +485,7 @@ mod serde_impl {
             if deserializer.is_human_readable() {
                 deserializer.deserialize_str(HRVisitor)
             } else {
-                unimplemented!("serialization is not yet implemented for non-human-readable formatsi, please file a request");
+                Err(D::Error::custom("deserialization is not yet implemented for non-human-readable formats, please file a request"))
             }
         }
     }
