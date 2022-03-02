@@ -103,17 +103,36 @@
 #![no_std]
 
 #[cfg(any(feature = "std", test))]
-extern crate std;
+#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+pub extern crate std;
 
 #[cfg(any(feature = "alloc", test))]
-extern crate alloc;
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
+pub extern crate alloc;
+
+#[cfg(feature = "bitcoin")]
+#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin")))]
+pub extern crate bitcoin;
+
+#[cfg(feature = "parse_arg")]
+#[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]
+pub extern crate parse_arg;
 
 #[cfg(feature = "postgres-types")]
-extern crate postgres_types_real as postgres_types;
+#[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
+pub extern crate postgres_types_real as postgres_types;
 
 #[cfg(feature = "secp256k1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
 pub extern crate secp256k1;
+
+#[cfg(feature = "serde")]
+#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
+pub extern crate serde;
+
+#[cfg(feature = "slog")]
+#[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
+pub extern crate slog;
 
 #[macro_use]
 mod macros;
