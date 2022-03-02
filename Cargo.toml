@@ -21,12 +21,11 @@ alloc = []
 postgres-types = ["postgres-types-real", "bytes", "std"]
 node_pubkey_verify = ["secp256k1/bitcoin_hashes"]
 node_pubkey_recovery = ["node_pubkey_verify", "secp256k1/recovery"]
-bitcoin_std = ["bitcoin/std", "std"]
-bitcoin_no_std = ["bitcoin/no-std", "alloc"]
 secp256k1_std = ["secp256k1/std", "std"]
 serde_alloc = ["alloc", "serde/alloc"]
-serde_std = ["std", "serde_alloc", "serde/std"]
 slog_std = ["std", "slog/std"]
+# Used for testing only - do NOT depend on this!
+bitcoin_std = ["bitcoin/std", "std"]
 
 [dependencies]
 serde = { version = "1.0.130", optional = true, default-features = false }

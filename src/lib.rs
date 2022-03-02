@@ -33,8 +33,7 @@
 //!           Enabled by default, implies `alloc.
 //! * `alloc` - enables conversions from/to heap-allocated types as well as additional error
 //!             information.
-//! * [`bitcoin`] - converting between types, you should use `bitcoin_std` feature if you need
-//!                 `std`.
+//! * [`bitcoin`] - converting between types
 //! * [`serde`] - serialization and deserialization of types
 //! * [`postgres-types`](postgres_types) - storing and retrieving from SQL
 //! * [`parse_arg`] - parsing arguments into types in this crate
@@ -51,14 +50,10 @@
 //! * `node_pubkey_recovery` - convenience function for verifying lightning messages
 //!                            signed with [`NodePubkey`], implies `node_pubkey_verify` and
 //!                            `secp256k1/recovery`
-//! * `bitcoin_std` - enables `std` feature in `bitcoin`, currently just for convenience
-//! * `bitcoin_no_std` - enables `no_std` feature in `bitcoin`, currently just for convenience
 //! * `secp256k1_std` - required for [`node_pubkey::ParseError`] to return `secp256k1::Error` from
 //!                     `source()` method of [`std::error::Error`]
 //! * `serde_alloc` - required for specialization of `serde::de::Visitor::visit_string` method to
 //!                   avoid allocation
-//! * `serde_std` - currently just implies `serde_alloc` and `std`, may be important for error
-//!                 handling in the future
 //! * `slog_std` - required for error types to use [`slog::Serializer::emit_error`] for logging
 //!
 //! Feel free to contribute your own!

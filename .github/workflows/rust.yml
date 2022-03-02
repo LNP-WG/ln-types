@@ -56,21 +56,11 @@ jobs:
         with:
           command: test
           args: --no-default-features --features=bitcoin_std
-      - name: test-feature-bitcoin_no_std
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features --features=bitcoin_no_std
       - name: test-feature-serde
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --no-default-features --features=serde
-      - name: test-feature-serde-std
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features --features=serde_std
       - name: test-feature-serde-alloc
         uses: actions-rs/cargo@v1
         with:
