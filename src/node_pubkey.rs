@@ -51,7 +51,7 @@ impl NodePubkey {
     /// ## Example
     ///
     /// ```
-    /// use ln_types::secp256k1::bitcoin_hashes::sha256d;
+    /// use ln_types::secp256k1::hashes::sha256d;
     ///
     /// let marvin_str = "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482";
     /// let marvin = marvin_str.parse::<ln_types::NodePubkey>().unwrap();
@@ -63,7 +63,7 @@ impl NodePubkey {
     /// ```
     #[cfg(feature = "node_pubkey_verify")]
     #[cfg_attr(docsrs, doc(cfg(feature = "node_pubkey_verify")))]
-    pub fn verify<H: secp256k1::ThirtyTwoByteHash + secp256k1::bitcoin_hashes::Hash, C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: &[u8], signature: &[u8]) -> Result<(), secp256k1::Error> {
+    pub fn verify<H: secp256k1::ThirtyTwoByteHash + secp256k1::hashes::Hash, C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: &[u8], signature: &[u8]) -> Result<(), secp256k1::Error> {
         use secp256k1::{Signature, Message};
 
         let signature = Signature::from_compact(signature)?;
@@ -96,8 +96,8 @@ impl NodePubkey {
     #[cfg_attr(docsrs, doc(cfg(feature = "node_pubkey_recovery")))]
     pub fn verify_lightning_message<C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: &[u8], signature: &[u8]) -> Result<(), secp256k1::Error> {
         use secp256k1::Message;
-        use secp256k1::recovery::{RecoverableSignature, RecoveryId};
-        use secp256k1::bitcoin_hashes::{sha256, sha256d, HashEngine, Hash};
+        use secp256k1::ecdsa::{RecoverableSignature, RecoveryId};
+        use secp256k1::hashes::{sha256, sha256d, HashEngine, Hash};
 
         let (recovery_id, signature) = signature
             .split_first()
