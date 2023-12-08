@@ -13,6 +13,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: Swatinem/rust-cache@v1.2.0
+      - name: Pin postgres-types
+        run: cargo update --precise 0.2.2 -p postgres-types
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
