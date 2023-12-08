@@ -26,6 +26,7 @@ serde_alloc = ["alloc", "serde/alloc"]
 slog_std = ["std", "slog/std"]
 # Used for testing only - do NOT depend on this!
 bitcoin_std = ["bitcoin/std", "std"]
+nightly = []
 
 [dependencies]
 serde = { version = "1.0.130", optional = true, default-features = false }

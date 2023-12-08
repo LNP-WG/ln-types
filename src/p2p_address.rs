@@ -6,23 +6,36 @@ use core::borrow::Borrow;
 use core::convert::TryFrom;
 use core::str::FromStr;
 use core::fmt;
+#[cfg(feature = "std")]
 use std::io;
+#[cfg(feature = "std")]
+use std::vec::Vec;
 use crate::NodeId;
 
+#[cfg(feature = "nightly")]
+use core::net;
+#[cfg(not(feature = "nightly"))]
+use std::net;
+
 #[cfg(feature = "alloc")]
-use alloc::{boxed::Box, string::String, vec::Vec, borrow::ToOwned, string::ToString};
+use alloc::{boxed::Box, string::String, borrow::ToOwned, string::ToString};
 
 const LN_DEFAULT_PORT: u16 = 9735;
 
 /// Abstracts over string operations.
 ///
 /// This trait enables efficient conversions.
+#[cfg(feature = "alloc")]
 trait StringOps: AsRef<str> + Into<String> {
     /// Converts given range of `self` into `String`
     fn into_substring(self, start: usize, end: usize) -> String;
 }
 
+#[cfg(not(feature = "alloc"))]
+trait StringOps: AsRef<str> { }
+
 /// The implementation avoids allocations - whole point of the trait.
+#[cfg(feature = "alloc")]
 impl StringOps for String {
     fn into_substring(mut self, start: usize, end: usize) -> String {
         self.replace_range(0..start, "");
@@ -32,12 +45,14 @@ impl StringOps for String {
 }
 
 impl<'a> StringOps for &'a str {
+    #[cfg(feature = "alloc")]
     fn into_substring(self, start: usize, end: usize) -> String {
         self[start..end].to_owned()
     }
 }
 
 /// Avoids allocations but has to store capacity
+#[cfg(feature = "alloc")]
 impl StringOps for Box<str> {
     fn into_substring(self, start: usize, end: usize) -> String {
         String::from(self).into_substring(start, end)
@@ -49,7 +64,8 @@ impl StringOps for Box<str> {
 /// This may be (partially) public in the future.
 #[derive(Clone)]
 enum HostInner {
-    Ip(std::net::IpAddr),
+    Ip(net::IpAddr),
+    #[cfg(feature = "alloc")]
     Hostname(String),
     // TODO: onion
 }
@@ -66,6 +82,7 @@ impl Host {
     /// Returns true if it's an onion (Tor) adress.
     pub fn is_onion(&self) -> bool {
         match &self.0 {
+            #[cfg(feature = "alloc")]
             HostInner::Hostname(hostname) => hostname.ends_with(".onion"),
             HostInner::Ip(_) => false,
         }
@@ -74,6 +91,7 @@ impl Host {
     /// Returns true if it's an IP adress.
     pub fn is_ip_addr(&self) -> bool {
         match &self.0 {
+            #[cfg(feature = "alloc")]
             HostInner::Hostname(_) => false,
             HostInner::Ip(_) => true,
         }
@@ -84,6 +102,7 @@ impl fmt::Display for Host {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self.0 {
             HostInner::Ip(addr) => fmt::Display::fmt(&addr, f),
+            #[cfg(feature = "alloc")]
             HostInner::Hostname(addr) => fmt::Display::fmt(&addr, f),
         }
     }
@@ -107,28 +126,31 @@ pub struct HostPort<H: Borrow<Host>>(
 impl<H: Borrow<Host>> fmt::Display for HostPort<H> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self.0.borrow().0 {
-            HostInner::Ip(std::net::IpAddr::V6(addr)) => write!(f, "[{}]:{}", addr, self.1),
+            HostInner::Ip(net::IpAddr::V6(addr)) => write!(f, "[{}]:{}", addr, self.1),
             _ => write!(f, "{}:{}", self.0.borrow(), self.1),
         }
     }
 }
 
+#[cfg(feature = "alloc")]
 impl From<Host> for String {
     fn from(value: Host) -> Self {
         match value.0 {
             HostInner::Ip(ip_addr) => ip_addr.to_string(),
+            #[cfg(feature = "alloc")]
             HostInner::Hostname(hostname) => hostname,
         }
     }
 }
 
 /// This does **not** attempt to resolve a hostname!
-impl TryFrom<Host> for std::net::IpAddr {
+impl TryFrom<Host> for net::IpAddr {
     type Error = NotIpAddr;
 
     fn try_from(value: Host) -> Result<Self, Self::Error> {
         match value.0 {
             HostInner::Ip(ip_addr) => Ok(ip_addr),
+            #[cfg(feature = "alloc")]
             HostInner::Hostname(hostname) => Err(NotIpAddr(hostname)),
         }
     }
@@ -137,15 +159,32 @@ impl TryFrom<Host> for std::net::IpAddr {
 /// Error returned when attempting to *convert* (not resolve) hostname to IP address.
 ///
 /// **Important: consumer code MUST NOT match on this using `NotIpAddr { .. }` syntax.
+#[cfg(feature = "alloc")]
 #[derive(Debug)]
 pub struct NotIpAddr(String);
 
+/// Error returned when attempting to *convert* (not resolve) hostname to IP address.
+///
+/// **Important: consumer code MUST NOT match on this using `NotIpAddr { .. }` syntax.
+#[derive(Debug)]
+#[cfg(not(feature = "alloc"))]
+#[non_exhaustive]
+pub struct NotIpAddr;
+
 impl fmt::Display for NotIpAddr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "the hostname '{}' is not an IP address", self.0)
+        #[cfg(feature = "alloc")]
+        {
+            write!(f, "the hostname '{}' is not an IP address", self.0)
+        }
+        #[cfg(not(feature = "alloc"))]
+        {
+            write!(f, "the hostname is not an IP address")
+        }
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for NotIpAddr {}
 
 /// Parsed Lightning P2P address.
@@ -155,6 +194,8 @@ impl std::error::Error for NotIpAddr {}
 /// external crates.
 ///
 /// It also stores host in a way that can avoid allocation if it's **not** a host name.
+/// This also means it works without `alloc` feature however it can not be constructed with a
+/// hostname.
 ///
 /// **Serde limitations:** non-human-readable formats are not supported yet as it wasn't decided
 /// what's the best way of doing it. Please state your preference in GitHub issues.
@@ -162,11 +203,13 @@ impl std::error::Error for NotIpAddr {}
 /// # Example
 ///
 /// ```
+/// # #[cfg(feature = "alloc")] {
 /// let marvin_str = "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482@ln-ask.me";
 /// let marvin = marvin_str.parse::<ln_types::P2PAddress>().unwrap();
 /// assert_eq!(marvin.node_id.to_string(), "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482");
 /// assert!(!marvin.host.is_ip_addr());
 /// assert_eq!(marvin.port, 9735);
+/// # }
 /// ```
 #[derive(Clone)]
 pub struct P2PAddress {
@@ -183,7 +226,7 @@ pub struct P2PAddress {
 /// This stores range representing host instead of string directly so that it can be returned from
 /// a monomorphic function without requiring allocations.
 enum IpOrHostnamePos {
-    Ip(std::net::IpAddr),
+    Ip(net::IpAddr),
     Hostname(usize, usize),
 }
 
@@ -204,22 +247,25 @@ impl P2PAddress {
         let (node_id, host_port) = s.split_at(at_pos);
         let host_port = &host_port[1..];
         let node_id = node_id.parse().map_err(ParseErrorInner::InvalidNodeId)?;
-        let (host, port) = match host_port.parse::<std::net::SocketAddr>() {
-            Ok(addr) => (IpOrHostnamePos::Ip(addr.ip()), addr.port()),
+        let (host_end, port) = match (host_port.starts_with('[') && host_port.ends_with(']'), host_port.rfind(':')) {
+            // The whole thing is an IPv6, without port
+            (true, _) => (host_port.len(), LN_DEFAULT_PORT),
+            (false, Some(pos)) => (pos, host_port[(pos + 1)..].parse().map_err(ParseErrorInner::InvalidPortNumber)?),
+            (false, None) => (host_port.len(), LN_DEFAULT_PORT),
+        };
+        let host = &host_port[..host_end];
+        let host = match host.parse::<net::Ipv4Addr>() {
+            Ok(ip) => IpOrHostnamePos::Ip(ip.into()),
             // We have to explicitly parse IPv6 without port to avoid confusing `:`
-            Err(_) if host_port.starts_with('[') && host_port.len() > 1 => {
-                let ip = host_port[1..(host_port.len() - 1)]
-                    .parse::<std::net::Ipv6Addr>()
+            Err(_) if host.starts_with('[') && host.ends_with(']') => {
+                let ip = host_port[1..(host.len() - 1)]
+                    .parse::<net::Ipv6Addr>()
                     .map_err(ParseErrorInner::InvalidIpv6)?;
 
-                (IpOrHostnamePos::Ip(ip.into()), LN_DEFAULT_PORT)
+                IpOrHostnamePos::Ip(ip.into())
             },
             Err(_) => {
-                let (end, port) = match host_port.find(':') {
-                    Some(pos) => (pos, host_port[(pos + 1)..].parse().map_err(ParseErrorInner::InvalidPortNumber)?),
-                    None => (host_port.len(), LN_DEFAULT_PORT),
-                };
-                (IpOrHostnamePos::Hostname(at_pos + 1, at_pos + 1 + end), port)
+                IpOrHostnamePos::Hostname(at_pos + 1, at_pos + 1 + host_end)
             },
         };
         
@@ -231,12 +277,16 @@ impl P2PAddress {
         let (node_id, host, port) = match Self::parse_raw(s.as_ref()) {
             Ok(result) => result,
             Err(error) => return Err(ParseError {
+                #[cfg(feature = "alloc")]
                 input: s.into(),
                 reason: error,
             }),
         };
         let host = match host {
+            #[cfg(feature = "alloc")]
             IpOrHostnamePos::Hostname(begin, end) => HostInner::Hostname(s.into_substring(begin, end)),
+            #[cfg(not(feature = "alloc"))]
+            IpOrHostnamePos::Hostname(_, _) => return Err(ParseError { reason: ParseErrorInner::UnsupportedHostname }),
             IpOrHostnamePos::Ip(ip) => HostInner::Ip(ip),
         };
 
@@ -284,6 +334,7 @@ impl<'a> TryFrom<&'a str> for P2PAddress {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl TryFrom<String> for P2PAddress {
     type Error = ParseError;
 
@@ -293,6 +344,7 @@ impl TryFrom<String> for P2PAddress {
     }
 }
 
+#[cfg(feature = "alloc")]
 impl TryFrom<Box<str>> for P2PAddress {
     type Error = ParseError;
 
@@ -307,16 +359,25 @@ impl TryFrom<Box<str>> for P2PAddress {
 /// **Important: consumer code MUST NOT match on this using `ParseError { .. }` syntax.
 #[derive(Debug, Clone)]
 pub struct ParseError {
+    #[cfg(feature = "alloc")]
     input: String,
     reason: ParseErrorInner,
 }
 
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write_err!(f, "failed to parse '{}' as Lightning Network P2P address", self.input; &self.reason)
+        #[cfg(feature = "alloc")]
+        {
+            write_err!(f, "failed to parse '{}' as Lightning Network P2P address", self.input; &self.reason)
+        }
+        #[cfg(not(feature = "alloc"))]
+        {
+            write_err!(f, "failed to parse Lightning Network P2P address"; &self.reason)
+        }
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for ParseError {
     #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -333,7 +394,9 @@ enum ParseErrorInner {
     MissingAtSymbol,
     InvalidNodeId(crate::node_id::ParseError),
     InvalidPortNumber(core::num::ParseIntError),
-    InvalidIpv6(std::net::AddrParseError),
+    InvalidIpv6(net::AddrParseError),
+    #[cfg(not(feature = "alloc"))]
+    UnsupportedHostname,
 }
 
 impl fmt::Display for ParseErrorInner {
@@ -343,10 +406,13 @@ impl fmt::Display for ParseErrorInner {
             ParseErrorInner::InvalidNodeId(error) => fmt::Display::fmt(error, f),
             ParseErrorInner::InvalidPortNumber(error) => write_err!(f, "invalid port number"; error),
             ParseErrorInner::InvalidIpv6(error) => write_err!(f, "invalid IPv6 address"; error),
+            #[cfg(not(feature = "alloc"))]
+            ParseErrorInner::UnsupportedHostname => f.write_str("the address is a hostname which is unsupported in this build (without an allocator)"),
         }
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -354,20 +420,24 @@ impl std::error::Error for ParseErrorInner {
             ParseErrorInner::InvalidNodeId(error) => error.source(),
             ParseErrorInner::InvalidPortNumber(error) => Some(error),
             ParseErrorInner::InvalidIpv6(error) => Some(error),
+            #[cfg(not(feature = "alloc"))]
+            ParseErrorInner::UnsupportedHostname => None,
         }
     }
 }
 
 /// Iterator over socket addresses returned by `to_socket_addrs()`
 ///
-/// This is the iterator used in the implementation of [`std::net::ToSocketAddrs`] for [`HostPort`]
+/// This is the iterator used in the implementation of [`net::ToSocketAddrs`] for [`HostPort`]
 /// and [`P2PAddress`].
+#[cfg(feature = "std")]
 pub struct SocketAddrs {
-    iter: core::iter::Chain<core::option::IntoIter<std::net::SocketAddr>, std::vec::IntoIter<std::net::SocketAddr>>
+    iter: core::iter::Chain<core::option::IntoIter<net::SocketAddr>, std::vec::IntoIter<net::SocketAddr>>
 }
 
+#[cfg(feature = "std")]
 impl Iterator for SocketAddrs {
-    type Item = std::net::SocketAddr;
+    type Item = net::SocketAddr;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next()
@@ -375,6 +445,7 @@ impl Iterator for SocketAddrs {
 }
 
 /// Note that onion addresses can never be resolved, you have to use a proxy instead.
+#[cfg(feature = "std")]
 impl<H: Borrow<Host>> std::net::ToSocketAddrs for HostPort<H> {
     type Iter = SocketAddrs;
 
@@ -384,7 +455,7 @@ impl<H: Borrow<Host>> std::net::ToSocketAddrs for HostPort<H> {
         }
 
         let iter = match &self.0.borrow().0 {
-            HostInner::Ip(ip_addr) => Some(std::net::SocketAddr::new(*ip_addr, self.1)).into_iter().chain(Vec::new()),
+            HostInner::Ip(ip_addr) => Some(net::SocketAddr::new(*ip_addr, self.1)).into_iter().chain(Vec::new()),
             HostInner::Hostname(hostname) => None.into_iter().chain((hostname.as_str(), self.1).to_socket_addrs()?),
         };
 
@@ -395,6 +466,7 @@ impl<H: Borrow<Host>> std::net::ToSocketAddrs for HostPort<H> {
 }
 
 /// Note that onion addresses can never be resolved, you have to use a proxy instead.
+#[cfg(feature = "std")]
 impl std::net::ToSocketAddrs for P2PAddress {
     type Iter = SocketAddrs;
 
@@ -414,6 +486,7 @@ impl fmt::Display for ResolveOnion {
     }
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for ResolveOnion {}
 
 #[cfg(feature = "parse_arg")]
@@ -592,7 +665,8 @@ mod tests {
     }
 
     #[test]
-    fn correct_no_port() {
+    #[cfg(feature = "alloc")]
+    fn correct_hostname_no_port() {
         let input = "022345678901234567890123456789012345678901234567890123456789abcdef@example.com";
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
@@ -601,8 +675,26 @@ mod tests {
     }
 
     #[test]
-    fn correct_with_port() {
+    #[cfg(feature = "alloc")]
+    fn correct_with_hostname_port() {
         let input = "022345678901234567890123456789012345678901234567890123456789abcdef@example.com:1234";
+        let parsed = input.parse::<P2PAddress>().unwrap();
+        let output = parsed.to_string();
+        assert_eq!(output, input);
+    }
+
+    #[test]
+    fn correct_ipv4_no_port() {
+        let input = "022345678901234567890123456789012345678901234567890123456789abcdef@127.0.0.1";
+        let parsed = input.parse::<P2PAddress>().unwrap();
+        let output = parsed.to_string();
+        let expected = format!("{}{}", input, ":9735");
+        assert_eq!(output, expected);
+    }
+
+    #[test]
+    fn correct_with_ipv4_port() {
+        let input = "022345678901234567890123456789012345678901234567890123456789abcdef@127.0.0.1:1234";
         let parsed = input.parse::<P2PAddress>().unwrap();
         let output = parsed.to_string();
         assert_eq!(output, input);

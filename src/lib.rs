@@ -98,6 +98,7 @@
 //! MIT
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(feature = "nightly", feature(ip_in_core))]
 #![deny(missing_docs)]
 
 #![no_std]
@@ -140,16 +141,16 @@ mod macros;
 pub(crate) mod err_fmt;
 
 pub mod node_id;
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", feature = "nightly"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "nightly"))))]
 pub mod p2p_address;
 pub mod amount;
 #[cfg(feature = "secp256k1")]
 pub mod node_pubkey;
 
 pub use node_id::NodeId;
-#[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
+#[cfg(any(feature = "std", feature = "nightly"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "nightly"))))]
 pub use p2p_address::P2PAddress;
 pub use amount::Amount;
 #[cfg(feature = "secp256k1")]

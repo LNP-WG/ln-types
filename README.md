@@ -21,6 +21,13 @@ The most important types currently available:
 
 Note: invoice is not here and isn't planned because it already exists in a separate crate.
 
+## Features
+
+This crate is `no_std` and no-alloc however limitations apply:
+
+* `P2PAddress` requires  nightly Rust because of `ip_in_core` - activate this explicitly using the `nightly` feature.
+* Without `alloc` (on nightly), `P2PAddress` can not parse/store hostnames. Attempts to do so will return errors.
+
 ## Integrations
 
 The crate aims to be interoperable with other crates via optional dependencies.
@@ -47,6 +54,7 @@ in surprising ways.
 
 The minimum supported Rust version is 1.48 but it's possible that it'll be decreased further.
 Generally, the intention is to support at least the latest Debian stable.
+However, `P2PAddress` is not available on `no_std` without nightly and once `ip_in_core` is stabilized, it will require the version it was stabilized in.
 
 Note that external libraries may have higher MSRV - this is not considered a breakage.
 
