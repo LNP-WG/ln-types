@@ -12,9 +12,9 @@ use std::io;
 use std::vec::Vec;
 use crate::NodeId;
 
-#[cfg(feature = "nightly")]
+#[cfg(rust_v_1_77)]
 use core::net;
-#[cfg(not(feature = "nightly"))]
+#[cfg(not(rust_v_1_77))]
 use std::net;
 
 #[cfg(feature = "alloc")]
@@ -428,7 +428,7 @@ impl std::error::Error for ParseErrorInner {
 
 /// Iterator over socket addresses returned by `to_socket_addrs()`
 ///
-/// This is the iterator used in the implementation of [`net::ToSocketAddrs`] for [`HostPort`]
+/// This is the iterator used in the implementation of [`std::net::ToSocketAddrs`] for [`HostPort`]
 /// and [`P2PAddress`].
 #[cfg(feature = "std")]
 pub struct SocketAddrs {
