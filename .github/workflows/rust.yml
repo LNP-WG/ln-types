@@ -23,7 +23,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --features=postgres-types,node_pubkey_verify,node_pubkey_recovery,secp256k1_std,serde_alloc,slog_std,bitcoin_std,parse_arg
+          args: --features=postgres-types,node_pubkey_verify,node_pubkey_recovery,secp256k1_std,serde_alloc,slog_std,bitcoin-units,parse_arg
       - name: test-default-features
         uses: actions-rs/cargo@v1
         with:
@@ -53,11 +53,11 @@ jobs:
         with:
           command: test
           args: --no-default-features --features=node_pubkey_recovery
-      - name: test-feature-bitcoin_std
+      - name: test-feature-bitcoin-units
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-default-features --features=bitcoin_std
+          args: --no-default-features --features=bitcoin-units
       - name: test-feature-serde
         uses: actions-rs/cargo@v1
         with:

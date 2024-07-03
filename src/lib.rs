@@ -13,7 +13,7 @@
 //!
 //! The most important types currently available:
 //!
-//! * [`Amount`] - similar to [`bitcoin::Amount`] but with millisatoshi precision
+//! * [`Amount`] - similar to [`bitcoin_units::Amount`] but with millisatoshi precision
 //! * [`P2PAddress`] - address of a node usually represented in text as `node_id_hex@host:port`
 //! * [`NodeId`] - the byte representation of node's public key (no crypto operations)
 //! * [`NodePubkey`] - newtype around [`secp256k1::PublicKey`] to distinguish node public key from
@@ -33,7 +33,7 @@
 //!           Enabled by default, implies `alloc.
 //! * `alloc` - enables conversions from/to heap-allocated types as well as additional error
 //!             information.
-//! * [`bitcoin`] - converting between types
+//! * [`bitcoin-units`] - converting between types
 //! * [`serde`] - serialization and deserialization of types
 //! * [`postgres-types`](postgres_types) - storing and retrieving from SQL
 //! * [`parse_arg`] - parsing arguments into types in this crate
@@ -74,9 +74,6 @@
 //! * Resolving a socket address requires `std`
 //! * Without `std` all error types display all sources delimited by `: `, with `std` they are
 //!   returned from the [`source()`](std::error::Error::source) method instead.
-//! * Due to unusual `no_std` support in the [`bitcoin`] crate this one is also unusual - enabling
-//!  `bitcoin` without `bitcoin_std` or `bitcoin_no_std` will lead to error (but it's still sensible
-//!  to do in library crates - the binary crate will have to choose)
 //!
 //! ## Versioning
 //!
@@ -111,9 +108,9 @@ pub extern crate std;
 #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub extern crate alloc;
 
-#[cfg(feature = "bitcoin")]
+#[cfg(feature = "bitcoin-units")]
 #[cfg_attr(docsrs, doc(cfg(feature = "bitcoin")))]
-pub extern crate bitcoin;
+pub extern crate bitcoin_units;
 
 #[cfg(feature = "parse_arg")]
 #[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]

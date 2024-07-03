@@ -468,20 +468,20 @@ impl fmt::Display for FractionError {
 #[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for FractionError {}
 
-#[cfg(feature = "bitcoin")]
+#[cfg(feature = "bitcoin-units")]
 mod impl_bitcoin {
     use super::{Amount, OverflowError, FractionError};
     use core::convert::TryFrom;
 
-    impl TryFrom<bitcoin::Amount> for Amount {
+    impl TryFrom<bitcoin_units::Amount> for Amount {
         type Error = OverflowError;
 
-        fn try_from(value: bitcoin::Amount) -> Result<Self, Self::Error> {
-            Self::from_sat(value.as_sat())
+        fn try_from(value: bitcoin_units::Amount) -> Result<Self, Self::Error> {
+            Self::from_sat(value.to_sat())
         }
     }
 
-    impl TryFrom<Amount> for bitcoin::Amount {
+    impl TryFrom<Amount> for bitcoin_units::Amount {
         type Error = FractionError;
 
         fn try_from(value: Amount) -> Result<Self, Self::Error> {
