@@ -340,7 +340,6 @@ impl<'a> TryFrom<&'a str> for Amount {
 /// Accepts an unsigned integer up to 21 000 000 BTC
 /// The amount may optionally be followed by denomination ` msat`.
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<String> for Amount {
     type Error = ParseError;
 
@@ -353,7 +352,6 @@ impl TryFrom<String> for Amount {
 /// Accepts an unsigned integer up to 21 000 000 BTC
 /// The amount may optionally be followed by denomination ` msat`.
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<str>> for Amount {
     type Error = ParseError;
 
@@ -382,7 +380,6 @@ impl fmt::Display for ParseError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseError {
     #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -421,7 +418,6 @@ impl fmt::Display for ParseErrorInner {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -447,7 +443,6 @@ impl fmt::Display for OverflowError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for OverflowError {}
 
 /// Error returned when a conversion to satoshis fails due to the value not being round.
@@ -465,7 +460,6 @@ impl fmt::Display for FractionError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for FractionError {}
 
 #[cfg(feature = "bitcoin-units")]
@@ -525,7 +519,6 @@ mod serde_impl {
     }
 
     /// The value is serialized as `u64` msats.
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for Amount {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
             serializer.serialize_u64(self.0)
@@ -533,7 +526,6 @@ mod serde_impl {
     }
 
     /// The value is deserialized as `u64` msats.
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for Amount {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
             deserializer.deserialize_u64(HRVisitor)
@@ -551,7 +543,6 @@ mod postgres_impl {
     use core::convert::TryInto;
 
     /// Stored as `i64` msats
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for Amount {
         fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
             // Amount guarantees to always be in bounds
@@ -566,7 +557,6 @@ mod postgres_impl {
     }
 
     /// Retrieved as `i64` msats with range check
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl<'a> FromSql<'a> for Amount {
         fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
             let msats = <i64>::from_sql(ty, raw)?
@@ -588,7 +578,6 @@ mod slog_impl {
     use slog::{Key, Value, Record, Serializer};
 
     /// Logs msats using `emit_u64`
-    #[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
     impl Value for Amount {
         fn serialize(&self, _rec: &Record, key: Key, serializer: &mut dyn Serializer) -> slog::Result {
             serializer.emit_u64(key, self.0)

@@ -46,7 +46,6 @@ impl NodeId {
     /// This is meant for convenience around APIs that require `Vec<u8>`. Since it allocates it's
     /// best to avoid it if possible.
     #[cfg(feature = "alloc")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
     pub fn to_vec(self) -> Vec<u8> {
         self.0.to_vec()
     }
@@ -174,7 +173,6 @@ impl<'a> TryFrom<&'a str> for NodeId {
 
 /// Expects hex representation
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<String> for NodeId {
     type Error = ParseError;
 
@@ -186,7 +184,6 @@ impl TryFrom<String> for NodeId {
 
 /// Expects hex representation
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<str>> for NodeId {
     type Error = ParseError;
 
@@ -209,7 +206,6 @@ impl<'a> TryFrom<&'a [u8]> for NodeId {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Vec<u8>> for NodeId {
     type Error = DecodeError;
 
@@ -220,7 +216,6 @@ impl TryFrom<Vec<u8>> for NodeId {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<[u8]>> for NodeId {
     type Error = DecodeError;
 
@@ -293,7 +288,6 @@ impl fmt::Display for DecodeError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for DecodeError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.error {
@@ -322,7 +316,6 @@ impl fmt::Display for ParseError {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseError {
     #[inline]
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -352,7 +345,6 @@ impl fmt::Display for ParseErrorInner {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
@@ -388,7 +380,6 @@ impl fmt::Display for InvalidNodeId {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for InvalidNodeId {}
 
 /// Implementation of `parse_arg::ParseArg` trait
@@ -397,7 +388,6 @@ mod parse_arg_impl {
     use core::fmt;
     use super::NodeId;
 
-    #[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]
     impl parse_arg::ParseArgFromStr for NodeId {
         fn describe_type<W: fmt::Write>(mut writer: W) -> fmt::Result {
             writer.write_str("a hex-encoded LN node ID (66 hex digits/33 bytes)")
@@ -459,7 +449,6 @@ mod serde_impl {
     }
 
     /// `NodeId` is serialized as hex to human-readable formats and as bytes to non-human-readable.
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for NodeId {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
             if serializer.is_human_readable() {
@@ -471,7 +460,6 @@ mod serde_impl {
     }
 
     /// `NodeId` is deserialized as hex from human-readable formats and as bytes from non-human-readable.
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for NodeId {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
             if deserializer.is_human_readable() {
@@ -496,7 +484,6 @@ mod postgres_impl {
     /// Supports `BYTEA`, `TEXT`, and `VARCHAR`.
     ///
     /// Stored as bytes if `BYTEA` is used, as hex string otherwise.
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for NodeId {
         fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
             use core::fmt::Write;
@@ -522,7 +509,6 @@ mod postgres_impl {
     /// Supports `BYTEA`, `TEXT`, and `VARCHAR`.
     ///
     /// Decoded as bytes if `BYTEA` is used, as hex string otherwise.
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl<'a> FromSql<'a> for NodeId {
         fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
             match *ty {
@@ -549,7 +535,6 @@ mod slog_impl {
     use slog::{Key, Value, Record, Serializer};
 
     /// Currently uses `Display` but may use `emit_bytes` if/when it's implemented.
-    #[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
     impl Value for NodeId {
         fn serialize(&self, _rec: &Record, key: Key, serializer: &mut dyn Serializer) -> slog::Result {
             serializer.emit_arguments(key, &format_args!("{}", self))
