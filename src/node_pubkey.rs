@@ -51,25 +51,27 @@ impl NodePubkey {
     /// ## Example
     ///
     /// ```
-    /// use ln_types::secp256k1::bitcoin_hashes::sha256d;
+    /// use ln_types::secp256k1::hashes::{sha256d, Hash};
     ///
     /// let marvin_str = "029ef8ee0ba895e2807ac1df1987a7888116c468e70f42e7b089e06811b0e45482";
     /// let marvin = marvin_str.parse::<ln_types::NodePubkey>().unwrap();
     /// let message = "Lightning Signed Message:I am the author of `ln-types` Rust crate.";
     /// let signature = &[0x29, 0x79, 0x4d, 0x9a, 0x6a, 0x48, 0x68, 0x0f, 0x9b, 0x8d, 0x60, 0x97, 0xa6, 0xd8, 0xef, 0x1d, 0x5c, 0xf9, 0xdc, 0x27, 0xcd, 0x76, 0x9a, 0x86, 0x58, 0xd6, 0x94, 0x00, 0x1c, 0x12, 0xb8, 0xdd, 0x49, 0xaf, 0x2b, 0xca, 0x0a, 0x24, 0xd8, 0xf4, 0x5a, 0x3b, 0x3c, 0xc7, 0x87, 0xf0, 0x48, 0x60, 0x63, 0x23, 0xf4, 0x24, 0xba, 0xa8, 0x0f, 0x5e, 0xe6, 0x05, 0x79, 0x81, 0xe2, 0x29, 0x6f, 0x0d];
     /// let secp = ln_types::secp256k1::Secp256k1::verification_only();
+    /// let message = sha256d::Hash::hash(message.as_bytes());
+    /// let message = secp256k1::Message::from_digest(message.to_byte_array());
     ///
-    /// marvin.verify::<sha256d::Hash, _>(&secp, message.as_bytes(), signature).unwrap();
+    /// marvin.verify(&secp, message, signature).unwrap();
     /// ```
     #[cfg(feature = "node_pubkey_verify")]
     #[cfg_attr(docsrs, doc(cfg(feature = "node_pubkey_verify")))]
-    pub fn verify<H: secp256k1::ThirtyTwoByteHash + secp256k1::bitcoin_hashes::Hash, C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: &[u8], signature: &[u8]) -> Result<(), secp256k1::Error> {
-        use secp256k1::{Signature, Message};
+    pub fn verify<M: Into<secp256k1::Message>, C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: M, signature: &[u8]) -> Result<(), secp256k1::Error> {
+        use secp256k1::ecdsa::Signature;
 
         let signature = Signature::from_compact(signature)?;
-        let message = Message::from_hashed_data::<H>(message);
+        let message = message.into();
 
-        secp.verify(&message, &signature, &self.0)
+        secp.verify_ecdsa(&message, &signature, &self.0)
     }
 
     /// Verifies a message signed by `signmessage` Eclair/LND RPC.
@@ -96,8 +98,8 @@ impl NodePubkey {
     #[cfg_attr(docsrs, doc(cfg(feature = "node_pubkey_recovery")))]
     pub fn verify_lightning_message<C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: &[u8], signature: &[u8]) -> Result<(), secp256k1::Error> {
         use secp256k1::Message;
-        use secp256k1::recovery::{RecoverableSignature, RecoveryId};
-        use secp256k1::bitcoin_hashes::{sha256, sha256d, HashEngine, Hash};
+        use secp256k1::ecdsa::{RecoverableSignature, RecoveryId};
+        use secp256k1::hashes::{sha256, sha256d, HashEngine, Hash};
 
         let (recovery_id, signature) = signature
             .split_first()
@@ -113,9 +115,9 @@ impl NodePubkey {
         hasher.input(b"Lightning Signed Message:");
         hasher.input(message);
         let hash = sha256d::Hash::from_engine(hasher);
-        let message = Message::from(hash);
+        let message = Message::from_digest(hash.to_byte_array());
 
-        let pubkey = secp.recover(&message, &signature)?;
+        let pubkey = secp.recover_ecdsa(&message, &signature)?;
         if pubkey == self.0 {
             Ok(())
         } else {
@@ -517,11 +519,11 @@ mod tests {
         parse_node_pubkey_error_invalid_pubkey, "020000000000000000000000000000000000000000000000000000000000000000", NodePubkey, [
             "failed to parse '020000000000000000000000000000000000000000000000000000000000000000' as Lightning Network node public key",
             "invalid public key",
-            "secp: malformed public key",
+            "malformed public key",
         ], [
             "failed to parse Lightning Network node public key",
             "invalid public key",
-            "secp: malformed public key",
+            "malformed public key",
         ];
     }
 
@@ -529,7 +531,7 @@ mod tests {
     chk_err_impl! {
         parse_node_pubkey_error_invalid_pubkey, "020000000000000000000000000000000000000000000000000000000000000000", NodePubkey, [
             "failed to parse '020000000000000000000000000000000000000000000000000000000000000000' as Lightning Network node public key",
-            "invalid public key: secp: malformed public key",
+            "invalid public key: malformed public key",
         ], [
             "irrelevant, we definitely have std and thus alloc",
         ];
