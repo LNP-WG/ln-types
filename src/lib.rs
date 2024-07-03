@@ -70,7 +70,8 @@
 //!
 //! This crate works without `std` or `alloc` with these limitations/differences:
 //!
-//! * [`P2PAddress`] is unavailable without `std`
+//! * [`P2PAddress`] is unavailable without `std` on Rust versions older than 1.77
+//! * Resolving a socket address requires `std`
 //! * Without `std` all error types display all sources delimited by `: `, with `std` they are
 //!   returned from the [`source()`](std::error::Error::source) method instead.
 //! * Due to unusual `no_std` support in the [`bitcoin`] crate this one is also unusual - enabling
@@ -98,7 +99,6 @@
 //! MIT
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(feature = "nightly", feature(ip_in_core))]
 #![deny(missing_docs)]
 
 #![no_std]
@@ -141,16 +141,16 @@ mod macros;
 pub(crate) mod err_fmt;
 
 pub mod node_id;
-#[cfg(any(feature = "std", feature = "nightly"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "nightly"))))]
+#[cfg(any(feature = "std", rust_v_1_77))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", version("1.77.0")))))]
 pub mod p2p_address;
 pub mod amount;
 #[cfg(feature = "secp256k1")]
 pub mod node_pubkey;
 
 pub use node_id::NodeId;
-#[cfg(any(feature = "std", feature = "nightly"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", feature = "nightly"))))]
+#[cfg(any(feature = "std", rust_v_1_77))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", version("1.77.0")))))]
 pub use p2p_address::P2PAddress;
 pub use amount::Amount;
 #[cfg(feature = "secp256k1")]
