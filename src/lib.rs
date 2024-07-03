@@ -96,40 +96,33 @@
 //! MIT
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![deny(missing_docs)]
 
 #![no_std]
 
 #[cfg(any(feature = "std", test))]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 pub extern crate std;
 
 #[cfg(any(feature = "alloc", test))]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub extern crate alloc;
 
 #[cfg(feature = "bitcoin-units")]
-#[cfg_attr(docsrs, doc(cfg(feature = "bitcoin")))]
 pub extern crate bitcoin_units;
 
 #[cfg(feature = "parse_arg")]
-#[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]
 pub extern crate parse_arg;
 
 #[cfg(feature = "postgres-types")]
-#[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
 pub extern crate postgres_types_real as postgres_types;
 
 #[cfg(feature = "secp256k1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
 pub extern crate secp256k1;
 
 #[cfg(feature = "serde")]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
 pub extern crate serde;
 
 #[cfg(feature = "slog")]
-#[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
 pub extern crate slog;
 
 #[macro_use]
@@ -139,7 +132,6 @@ pub(crate) mod err_fmt;
 
 pub mod node_id;
 #[cfg(any(feature = "std", rust_v_1_77))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", version("1.77.0")))))]
 pub mod p2p_address;
 pub mod amount;
 #[cfg(feature = "secp256k1")]
@@ -147,9 +139,7 @@ pub mod node_pubkey;
 
 pub use node_id::NodeId;
 #[cfg(any(feature = "std", rust_v_1_77))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", version("1.77.0")))))]
 pub use p2p_address::P2PAddress;
 pub use amount::Amount;
 #[cfg(feature = "secp256k1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
 pub use node_pubkey::NodePubkey;

@@ -540,7 +540,6 @@ mod serde_impl {
     ///
     /// This fails if the format is **not** human-readable because it's not decided how it should
     /// be done.
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl Serialize for P2PAddress {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
             use serde::ser::Error;
@@ -559,7 +558,6 @@ mod serde_impl {
     ///
     /// This fails if the format is **not** human-readable because it's not decided how it should
     /// be done.
-    #[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
     impl<'de> Deserialize<'de> for P2PAddress {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
             if deserializer.is_human_readable() {
@@ -580,7 +578,6 @@ mod postgres_impl {
     use std::error::Error;
 
     /// Stores the value as text (same types as `&str`)
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for P2PAddress {
         fn to_sql(&self, _ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
             use core::fmt::Write;
@@ -596,7 +593,6 @@ mod postgres_impl {
     }
 
     /// Retrieves the value as text (same types as `&str`)
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl<'a> FromSql<'a> for P2PAddress {
         fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
             <&str>::from_sql(ty, raw)?.parse().map_err(|error| Box::new(error) as _)
@@ -615,7 +611,6 @@ mod slog_impl {
     use slog::{Key, Value, KV, Record, Serializer};
 
     /// Uses `Display`
-    #[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
     impl Value for P2PAddress {
         fn serialize(&self, _rec: &Record, key: Key, serializer: &mut dyn Serializer) -> slog::Result {
             serializer.emit_arguments(key, &format_args!("{}", self))
@@ -629,7 +624,6 @@ mod slog_impl {
     /// * `node_id` - delegates to `NodeId`
     /// * `host` - `Display`
     /// * `port` - `emit_u16`
-    #[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
     impl KV for P2PAddress {
         fn serialize(&self, rec: &Record, serializer: &mut dyn Serializer) -> slog::Result {
             // `Key` is a type alias but if `slog/dynamic_keys` feature is enabled it's not

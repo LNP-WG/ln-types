@@ -5,8 +5,6 @@
 //! Further, it provides convenient parsing, serialization and signature verification methods
 //! along with strong error types.
 
-#![cfg_attr(docsrs, doc(cfg(feature = "secp256k1")))]
-
 use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::fmt;
@@ -64,7 +62,6 @@ impl NodePubkey {
     /// marvin.verify(&secp, message, signature).unwrap();
     /// ```
     #[cfg(feature = "node_pubkey_verify")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "node_pubkey_verify")))]
     pub fn verify<M: Into<secp256k1::Message>, C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: M, signature: &[u8]) -> Result<(), secp256k1::Error> {
         use secp256k1::ecdsa::Signature;
 
@@ -95,7 +92,6 @@ impl NodePubkey {
     /// marvin.verify_lightning_message(&secp, message.as_bytes(), signature).unwrap();
     /// ```
     #[cfg(feature = "node_pubkey_recovery")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "node_pubkey_recovery")))]
     pub fn verify_lightning_message<C: secp256k1::Verification>(&self, secp: &Secp256k1<C>, message: &[u8], signature: &[u8]) -> Result<(), secp256k1::Error> {
         use secp256k1::Message;
         use secp256k1::ecdsa::{RecoverableSignature, RecoveryId};
@@ -267,7 +263,6 @@ impl<'a> TryFrom<&'a str> for NodePubkey {
 
 /// Expects hex representation
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<String> for NodePubkey {
     type Error = ParseError;
 
@@ -279,7 +274,6 @@ impl TryFrom<String> for NodePubkey {
 
 /// Expects hex representation
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<str>> for NodePubkey {
     type Error = ParseError;
 
@@ -299,7 +293,6 @@ impl<'a> TryFrom<&'a [u8]> for NodePubkey {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Vec<u8>> for NodePubkey {
     type Error = secp256k1::Error;
 
@@ -310,7 +303,6 @@ impl TryFrom<Vec<u8>> for NodePubkey {
 }
 
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 impl TryFrom<Box<[u8]>> for NodePubkey {
     type Error = secp256k1::Error;
 
@@ -351,7 +343,6 @@ impl fmt::Display for ParseError {
 ///
 /// Specifically pubkey error is displayed inline instead of as a source.
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         Some(&self.reason)
@@ -378,7 +369,6 @@ impl fmt::Display for ParseErrorInner {
 }
 
 #[cfg(feature = "std")]
-#[cfg_attr(docsrs, doc(cfg(feature = "std")))]
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
@@ -397,7 +387,6 @@ mod parse_arg_impl {
     use core::fmt;
     use super::NodePubkey;
 
-    #[cfg_attr(docsrs, doc(cfg(feature = "parse_arg")))]
     impl parse_arg::ParseArgFromStr for NodePubkey {
         fn describe_type<W: fmt::Write>(mut writer: W) -> fmt::Result {
             writer.write_str("a hex-encoded LN node ID (66 hex digits/33 bytes)")
@@ -442,7 +431,6 @@ mod postgres_impl {
     /// Supports `BYTEA`, `TEXT`, and `VARCHAR`.
     ///
     /// Stored as bytes if `BYTEA` is used, as hex string otherwise.
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl ToSql for NodePubkey {
         fn to_sql(&self, ty: &Type, out: &mut BytesMut) -> Result<IsNull, Box<dyn Error + Send + Sync + 'static>> {
             self.to_node_id().to_sql(ty, out)
@@ -458,7 +446,6 @@ mod postgres_impl {
     /// Supports `BYTEA`, `TEXT`, and `VARCHAR`.
     ///
     /// Decoded as bytes if `BYTEA` is used, as hex string otherwise.
-    #[cfg_attr(docsrs, doc(cfg(feature = "postgres-types")))]
     impl<'a> FromSql<'a> for NodePubkey {
         fn from_sql(ty: &Type, raw: &'a [u8]) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
             NodeId::from_sql(ty, raw)?.try_into().map_err(|error| Box::new(error) as _)
@@ -477,7 +464,6 @@ mod slog_impl {
     use slog::{Key, Value, Record, Serializer};
 
     /// Currently uses `Display` but may use `emit_bytes` if/when it's implemented.
-    #[cfg_attr(docsrs, doc(cfg(feature = "slog")))]
     impl Value for NodePubkey {
         fn serialize(&self, _rec: &Record, key: Key, serializer: &mut dyn Serializer) -> slog::Result {
             serializer.emit_arguments(key, &format_args!("{}", self))
