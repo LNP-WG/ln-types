@@ -227,7 +227,10 @@ pub struct P2PAddress {
 /// a monomorphic function without requiring allocations.
 enum IpOrHostnamePos {
     Ip(net::IpAddr),
+    #[cfg(feature = "alloc")]
     Hostname(usize, usize),
+    #[cfg(not(feature = "alloc"))]
+    Hostname((), ()),
 }
 
 impl P2PAddress {
@@ -264,8 +267,13 @@ impl P2PAddress {
 
                 IpOrHostnamePos::Ip(ip.into())
             },
+            #[cfg(feature = "alloc")]
             Err(_) => {
                 IpOrHostnamePos::Hostname(at_pos + 1, at_pos + 1 + host_end)
+            },
+            #[cfg(not(feature = "alloc"))]
+            Err(_) => {
+                IpOrHostnamePos::Hostname((), ())
             },
         };
         
@@ -478,8 +486,10 @@ impl std::net::ToSocketAddrs for P2PAddress {
 /// Error type returned when attempting to resolve onion address.
 // If this is made public it should be future-proofed like other errors.
 #[derive(Debug)]
+#[cfg(feature = "std")]
 struct ResolveOnion;
 
+#[cfg(feature = "std")]
 impl fmt::Display for ResolveOnion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_str("attempt to resolve onion address")

@@ -1,10 +1,13 @@
 /// Macros helping with implementations of error formatting.
 
+#[cfg(any(not(feature = "alloc"), feature = "std"))]
 use core::fmt;
 
 /// Zero-sized version of empty string
+#[cfg(any(not(feature = "alloc"), feature = "std"))]
 pub(crate) struct Empty;
 
+#[cfg(any(not(feature = "alloc"), feature = "std"))]
 impl fmt::Display for Empty {
     fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
         Ok(())
@@ -12,10 +15,10 @@ impl fmt::Display for Empty {
 }
 
 /// Displays error with sources delimited by `: `
-#[cfg(all(not(feature = "slog_std"), feature = "std"))]
+#[cfg(all(not(feature = "slog_std"), feature = "std", feature = "slog"))]
 pub(crate) struct JoinErrSources<'a, T: std::error::Error + 'static>(pub &'a T);
 
-#[cfg(all(not(feature = "slog_std"), feature = "std"))]
+#[cfg(all(not(feature = "slog_std"), feature = "std", feature = "slog"))]
 impl<'a, T: std::error::Error + 'static> fmt::Display for JoinErrSources<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)?;
