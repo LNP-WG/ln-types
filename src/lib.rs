@@ -88,7 +88,7 @@
 //!
 //! ## MSRV
 //!
-//! The minimum supported Rust version is 1.48 but it's possible that it'll be decreased further.
+//! The minimum supported Rust version is 1.56 and will be increased to 1.63 soon.
 //! Generally, the intention is to support at least the latest Debian stable.
 //!
 //! Note that external libraries may have higher MSRV - this is not considered a breakage.

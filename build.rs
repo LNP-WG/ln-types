@@ -29,6 +29,6 @@ fn main() {
     // print cfg for all interesting versions less than or equal to minor
     for version in MSRV_MINOR..=minor {
         println!("cargo:rustc-cfg=rust_v_1_{}", version);
-        println!("cargo::rustc-check-cfg=cfg(rust_v_1_{})", version);
+        println!("cargo:rustc-check-cfg=cfg(rust_v_1_{})", version);
     }
 }
