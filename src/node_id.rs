@@ -66,14 +66,14 @@ impl NodeId {
                 b'0'..=b'9' => Ok(digit - b'0'),
                 b'a'..=b'f' => Ok(digit - b'a' + 10),
                 b'A'..=b'F' => Ok(digit - b'A' + 10),
-                _ => Err(ParseErrorInner::InvalidChar { pos, c: s.chars().nth(pos).unwrap(), }),
+                _ => Err(ParseErrorInner::Char { pos, c: s.chars().nth(pos).unwrap(), }),
             }
         }
 
         let mut result = [0; 33];
 
         if s.len() != 66 {
-            return Err(ParseErrorInner::InvalidLen)
+            return Err(ParseErrorInner::Length)
         }
 
         for ((i, pair), dst) in s.as_bytes().chunks_exact(2).enumerate().zip(&mut result) {
@@ -346,17 +346,17 @@ impl std::error::Error for ParseError {
 #[derive(Debug, Clone)]
 pub(crate) enum ParseErrorInner {
     /// Length != 66 chars
-    InvalidLen,
-    InvalidChar { pos: usize, c: char, },
-    InvalidNodeId(InvalidNodeId),
+    Length,
+    Char { pos: usize, c: char, },
+    NodeId(InvalidNodeId),
 }
 
 impl fmt::Display for ParseErrorInner {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            ParseErrorInner::InvalidLen => f.write_str("invalid length (must be 66 chars)"),
-            ParseErrorInner::InvalidChar { c, pos, } => write!(f, "invalid character '{}' at position {} (must be hex digit)", c, pos),
-            ParseErrorInner::InvalidNodeId(error) => write_err!(f, "invalid node ID"; error),
+            ParseErrorInner::Length => f.write_str("invalid length (must be 66 chars)"),
+            ParseErrorInner::Char { c, pos, } => write!(f, "invalid character '{}' at position {} (must be hex digit)", c, pos),
+            ParseErrorInner::NodeId(error) => write_err!(f, "invalid node ID"; error),
         }
     }
 }
@@ -365,15 +365,15 @@ impl fmt::Display for ParseErrorInner {
 impl std::error::Error for ParseErrorInner {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            ParseErrorInner::InvalidLen | ParseErrorInner::InvalidChar { .. } => None,
-            ParseErrorInner::InvalidNodeId(error) => Some(error),
+            ParseErrorInner::Length | ParseErrorInner::Char { .. } => None,
+            ParseErrorInner::NodeId(error) => Some(error),
         }
     }
 }
 
 impl From<InvalidNodeId> for ParseErrorInner {
     fn from(value: InvalidNodeId) -> Self {
-        ParseErrorInner::InvalidNodeId(value)
+        ParseErrorInner::NodeId(value)
     }
 }
 
@@ -435,9 +435,9 @@ mod serde_impl {
 
             NodeId::parse_raw(v).map_err(|error| {
                 match error {
-                    ParseErrorInner::InvalidLen => E::invalid_length(v.len(), &"66 hex digits beginning with 02 or 03"),
-                    ParseErrorInner::InvalidChar { c, pos: _, } => E::invalid_value(serde::de::Unexpected::Char(c), &"a hex digit"),
-                    ParseErrorInner::InvalidNodeId(error) => E::invalid_value(serde::de::Unexpected::Bytes(&[error.bad_byte]), &"02 or 03"),
+                    ParseErrorInner::Length => E::invalid_length(v.len(), &"66 hex digits beginning with 02 or 03"),
+                    ParseErrorInner::Char { c, pos: _, } => E::invalid_value(serde::de::Unexpected::Char(c), &"a hex digit"),
+                    ParseErrorInner::NodeId(error) => E::invalid_value(serde::de::Unexpected::Bytes(&[error.bad_byte]), &"02 or 03"),
                 }
             })
         }
