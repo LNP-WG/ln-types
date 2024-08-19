@@ -153,7 +153,7 @@ checksum = "fbe5e23404da5b4f555ef85ebed98fb4083e55a00c317800bc2a50ede9f3d219"
 
 [[package]]
 name = "ln-types"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bitcoin-units",
  "bytes",
