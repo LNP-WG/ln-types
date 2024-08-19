@@ -54,7 +54,7 @@ in surprising ways.
 
 The minimum supported Rust version is 1.56 and will be increased to 1.63 soon.
 Generally, the intention is to support at least the latest Debian stable.
-However, `P2PAddress` is not available on `no_std` without nightly and once `ip_in_core` is stabilized, it will require the version it was stabilized in.
+However, if the Rust version is lower than 1.77 the `P2PAddress` is not available without `std`.
 
 Note that external libraries may have higher MSRV - this is not considered a breakage.
 
