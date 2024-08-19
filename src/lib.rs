@@ -45,6 +45,8 @@
 //!
 //! ### Additional features
 //!
+//! * `hex-conservative` - improves the performance of displaying `NodeId`/`NodePubkey` at the cost
+//!                        of additional dependency
 //! * `node_pubkey_verify` - convenience function for verifying messages signed with
 //!                          [`NodePubkey`], implies `secp256k1/bitcoin_hashes`
 //! * `node_pubkey_recovery` - convenience function for verifying lightning messages

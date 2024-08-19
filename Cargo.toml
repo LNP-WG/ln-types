@@ -26,6 +26,7 @@ serde_alloc = ["alloc", "serde/alloc"]
 slog_std = ["std", "slog/std"]
 
 [dependencies]
+hex-conservative = { version = "0.2.1", default-features = false, optional = true }
 serde = { version = "1.0.130", optional = true, default-features = false }
 # Warning: don't depend on this as a feature!
 postgres-types-real = { package = "postgres-types", version = "0.2.2", optional = true }

@@ -101,6 +101,7 @@ impl NodeId {
         })
     }
     /// Writes the fill character required number of times.
+    #[cfg(not(feature = "hex-conservative"))]
     fn prefill(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use fmt::Write;
 
@@ -116,11 +117,7 @@ impl NodeId {
 /// Shows `NodeId` as hex
 impl fmt::Display for NodeId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.prefill(f)?;
-        for byte in &self.0 {
-            write!(f, "{:02x}", byte)?;
-        }
-        Ok(())
+        fmt::LowerHex::fmt(self, f)
     }
 }
 
@@ -136,18 +133,38 @@ impl fmt::Debug for NodeId {
 impl fmt::LowerHex for NodeId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+        #[cfg(feature = "hex-conservative")]
+        {
+            hex_conservative::fmt_hex_exact!(f, 33, &self.0, hex_conservative::Case::Lower)
+        }
+
+        #[cfg(not(feature = "hex-conservative"))]
+        {
+            self.prefill(f)?;
+            for byte in &self.0 {
+                write!(f, "{:02x}", byte)?;
+            }
+            Ok(())
+        }
     }
 }
 
 /// As `Display` but with upper-case letters
 impl fmt::UpperHex for NodeId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.prefill(f)?;
-        for byte in &self.0 {
-            write!(f, "{:02X}", byte)?;
+        #[cfg(feature = "hex-conservative")]
+        {
+            hex_conservative::fmt_hex_exact!(f, 33, &self.0, hex_conservative::Case::Upper)
         }
-        Ok(())
+
+        #[cfg(not(feature = "hex-conservative"))]
+        {
+            self.prefill(f)?;
+            for byte in &self.0 {
+                write!(f, "{:02X}", byte)?;
+            }
+            Ok(())
+        }
     }
 }
 

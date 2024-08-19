@@ -157,6 +157,7 @@ version = "0.2.0"
 dependencies = [
  "bitcoin-units",
  "bytes",
+ "hex-conservative",
  "parse_arg",
  "postgres-types",
  "secp256k1",
